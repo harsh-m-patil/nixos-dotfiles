@@ -43,6 +43,13 @@ hl.layer_rule({
     ignore_alpha = 0.3,
 })
 
+hl.layer_rule({
+    name         = "blur-quickshell-f1",
+    match        = { namespace = "^quickshell-f1$" },
+    blur         = true,
+    ignore_alpha = 0.3,
+})
+
 hl.window_rule({
     name   = "float-quickshell-sysmon",
     match  = { class = "^org\\.quickshell$", title = "^System Monitor$" },

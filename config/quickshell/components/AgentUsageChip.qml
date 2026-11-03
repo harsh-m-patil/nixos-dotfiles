@@ -1,365 +1,185 @@
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Layouts
+import Quickshell
+import Quickshell.Wayland
 
 import "."
 
-Island {
+// The agent usage island. The bar holds a placeholder; the shape lives in an overlay
+// surface and morphs in place:
+//   compact  limit ring + today's spend
+//   peek     hover, or a few seconds after the tightest limit crosses 35% / 15% left
+//   full     models, days and limits (click, or `qs ipc call agentUsage toggle`)
+Item {
     id: root
 
-    hPad: 3
+    implicitWidth: compact.implicitWidth + 24
+    implicitHeight: 28
 
-    readonly property var today: AgentUsageData.today
-    readonly property var cycle: AgentUsageData.cycle
-    readonly property var windows: AgentUsageData.windows
-    readonly property var providers: AgentUsageData.snapshot.providers ?? []
-    readonly property int remaining: AgentUsageData.tightestRemaining
-    readonly property real totalTokens: Number(cycle?.totalTokens || 0)
-    readonly property real todayTokens: Number(today?.totalTokens || 0)
-    readonly property real todayCost: Number(today?.costUsd || 0)
-    readonly property real recordedTokens: {
-        let total = 0
-        for (let i = 0; i < providers.length; i++)
-            total += Number(providers[i].totalTokens || 0)
-        return total
-    }
-    readonly property bool initialLoad: AgentUsageData.loading && !AgentUsageData.everLoaded
-
-    function limitColor(percent) {
-        return percent <= 15 ? Theme.love : percent <= 35 ? Theme.gold : Theme.iris
+    readonly property var barWindow: QsWindow.window
+    readonly property string screenName: barWindow?.screen?.name ?? ""
+    readonly property point origin: {
+        void x; void width; void parent?.x; void parent?.parent?.x; void parent?.parent?.width
+        const p = mapToItem(null, 0, 0)
+        return Qt.point(p.x + (barWindow?.margins?.left ?? 0), p.y + (barWindow?.margins?.top ?? 0))
     }
 
-    function providerModels(providerId) {
-        const models = cycle?.models || []
-        return models.filter(model => model.provider === providerId)
-            .sort((a, b) => Number(b.totalTokens || 0) - Number(a.totalTokens || 0))
-            .slice(0, 2)
+    property bool hoverPeek: false
+    readonly property bool full: AgentUsageData.open && AgentUsageData.screen === screenName
+    readonly property string state_: full ? "full" : hoverPeek || alert.running ? "peek" : "compact"
+    onState_Changed: if (state_ === "compact") settle.restart()
+    Timer { id: settle; interval: 450 }
+
+    Timer { id: alert; interval: 6000 }
+    Timer { id: intent; interval: 180; onTriggered: root.hoverPeek = true }
+    Timer { id: leave; interval: 280; onTriggered: root.hoverPeek = false }
+
+    readonly property int band: {
+        const t = AgentUsageData.tightest
+        return !t ? 0 : t.left <= 15 ? 2 : t.left <= 35 ? 1 : 0
     }
+    onBandChanged: if (band > 0 && AgentUsageData.ready) alert.restart()
 
-    function providerIcon(id) {
-        if (id === "anthropic") return "󰚩"
-        if (id === "openai" || id === "cursor") return "󰗀"
-        if (id === "google") return "󰊭"
-        if (id === "xai") return "󰉼"
-        return "󰚩"
-    }
+    PanelWindow {
+        id: win
+        screen: root.barWindow?.screen ?? null
+        visible: root.visible && (root.barWindow?.visible ?? true)
+        color: "transparent"
+        WlrLayershell.namespace: "quickshell-agent-usage"
+        // Expanded islands sit above their neighbours' pills; drop back once the collapse settles.
+        WlrLayershell.layer: root.state_ !== "compact" || settle.running ? WlrLayer.Overlay : WlrLayer.Top
+        WlrLayershell.keyboardFocus: root.full ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        exclusionMode: ExclusionMode.Ignore
+        anchors { top: true; bottom: true; left: true; right: true }
+        mask: Region { item: root.full ? backdrop : shape }
 
-    RowLayout {
-        spacing: 4
+        readonly property size peekSize: Qt.size(560, peek.implicitHeight + 40)
+        readonly property size fullSize: Qt.size(Math.min(width - 16, 820), Math.min(height - 48, [600, 520, 430][AgentUsageData.page]))
 
-        Text {
-            text: "󰚩"
-            color: windows.length ? root.limitColor(root.remaining) : Theme.subtle
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize - 2
+        Rectangle {
+            id: backdrop
+            anchors.fill: parent
+            color: "transparent"
+            TapHandler { onTapped: AgentUsageData.open = false }
         }
 
-        Text {
-            visible: (!AgentUsageData.loading || AgentUsageData.everLoaded) && windows.length > 0
-            text: root.remaining + "%"
-            color: AgentUsageData.available ? root.limitColor(root.remaining) : Theme.muted
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize - 2
-            font.weight: Font.DemiBold
+        Item {
+            id: keys
+            anchors.fill: parent
+            focus: true
+            Keys.onPressed: e => e.accepted = root.full && hubLoader.item && hubLoader.item.handleKey(e)
         }
-    }
+        Connections {
+            target: root
+            function onFullChanged() { if (root.full) keys.forceActiveFocus() }
+        }
 
-    HoverHandler { id: hover }
+        RectangularShadow {
+            anchors.fill: shape
+            radius: shape.radius
+            blur: 36
+            offset.y: 10
+            spread: -4
+            color: Qt.rgba(0, 0, 0, 0.4)
+            opacity: root.state_ === "compact" ? 0 : 1
+            Behavior on opacity { NumberAnimation { duration: 240 } }
+        }
 
-    BarPopup {
-        id: popup
-        trigger: root
-        triggerHovered: hover.hovered
-        padding: 14
-        align: 1
-        contentMinWidth: 390
+        Rectangle {
+            id: shape
+            readonly property real cx: root.origin.x + root.width / 2
+            readonly property real tw: root.state_ === "full" ? win.fullSize.width : root.state_ === "peek" ? win.peekSize.width : root.width
+            readonly property real th: root.state_ === "full" ? win.fullSize.height : root.state_ === "peek" ? win.peekSize.height : 28
 
-        ColumnLayout {
-            Layout.preferredWidth: 390
-            spacing: 10
+            x: root.state_ === "compact" ? root.origin.x : Math.max(8, Math.min(win.width - tw - 8, cx - tw / 2))
+            y: root.origin.y
+            width: tw
+            height: th
+            radius: root.state_ === "compact" ? 14 : 30
+            color: F1Hub.surface
+            border.width: 1
+            border.color: F1Hub.hairline
+            clip: true
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 9
+            Behavior on x { SpringAnimation { spring: 3.4; damping: 0.3; epsilon: 0.3 } }
+            Behavior on width { SpringAnimation { spring: 3.4; damping: 0.3; epsilon: 0.3 } }
+            Behavior on height { SpringAnimation { spring: 3.4; damping: 0.32; epsilon: 0.3 } }
+            Behavior on radius { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
 
-                Rectangle {
-                    implicitWidth: 40
-                    implicitHeight: 40
-                    radius: 12
-                    color: Theme.alpha(Theme.iris, 0.14)
-                    Text {
-                        anchors.centerIn: parent
-                        text: "󰚩"
-                        color: Theme.iris
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 22
-                    }
-                }
-
-                ColumnLayout {
-                    spacing: 1
-                    Text {
-                        text: "Agent activity"
-                        color: Theme.foreground
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 14
-                        font.weight: Font.Bold
-                    }
-                    Text {
-                        text: root.initialLoad ? "Scanning local agent history…"
-                            : root.providers.length + " providers  ·  "
-                                + (root.cycle?.sessions || 0) + " sessions this cycle"
-                        color: Theme.subtle
-                        font.family: Theme.displayFont
-                        font.pixelSize: 10
-                    }
-                }
-
-                Item { Layout.fillWidth: true }
-
-                Text {
-                    visible: AgentUsageData.snapshot.readAt !== undefined && AgentUsageData.snapshot.readAt !== ""
-                    text: Fmt.ago(Date.parse(AgentUsageData.snapshot.readAt) / 1000)
-                    color: Theme.muted
-                    font.family: Theme.displayFont
-                    font.pixelSize: 9
+            HoverHandler {
+                cursorShape: root.full ? Qt.ArrowCursor : Qt.PointingHandCursor
+                onHoveredChanged: {
+                    if (hovered) { leave.stop(); intent.restart() }
+                    else { intent.stop(); leave.restart() }
                 }
             }
-
-            Rectangle {
-                Layout.fillWidth: true
-                implicitHeight: 1
-                color: Theme.highlightLow
+            TapHandler {
+                enabled: !root.full
+                onTapped: AgentUsageData.toggle(root.screenName)
             }
 
+            // Compact: how close the tightest limit is, and what today cost.
             RowLayout {
-                Layout.fillWidth: true
+                id: compact
+                x: (shape.width - width) / 2
+                height: 28
                 spacing: 8
-                visible: !root.initialLoad || root.windows.length > 0
+                opacity: root.state_ === "compact" ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 140 } }
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 2
-                    Text {
-                        text: "TOKENS THIS CYCLE"
-                        color: Theme.muted
-                        font.family: Theme.displayFont
-                        font.pixelSize: 9
-                        font.weight: Font.DemiBold
-                    }
-                    Text {
-                        text: Fmt.tokens(root.totalTokens)
-                        color: Theme.foreground
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 22
-                        font.weight: Font.Bold
-                    }
+                AgentUsageRing {
+                    visible: AgentUsageData.tightest !== null
+                    value: AgentUsageData.tightest ? AgentUsageData.tightest.used / 100 : 0
+                    accent: AgentUsageData.accent
                 }
-
-                Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: Theme.highlightLow }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 2
-                    Text {
-                        text: "TODAY"
-                        color: Theme.muted
-                        font.family: Theme.displayFont
-                        font.pixelSize: 9
-                        font.weight: Font.DemiBold
-                    }
-                    Text {
-                        text: Fmt.tokens(root.todayTokens)
-                        color: Theme.iris
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 18
-                        font.weight: Font.Bold
-                    }
-                }
-
-                Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: Theme.highlightLow }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 2
-                    Text {
-                        text: "EST. COST"
-                        color: Theme.muted
-                        font.family: Theme.displayFont
-                        font.pixelSize: 9
-                        font.weight: Font.DemiBold
-                    }
-                    Text {
-                        text: Fmt.usd(root.todayCost)
-                        color: Theme.gold
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 18
-                        font.weight: Font.Bold
-                    }
-                }
-            }
-
-            ColumnLayout {
-                visible: root.windows.length > 0
-                Layout.fillWidth: true
-                spacing: 7
-
-                Text {
-                    text: "Subscription limits"
-                    color: Theme.foreground
-                    font.family: Theme.displayFont
-                    font.pixelSize: 12
+                F1Text {
+                    visible: AgentUsageData.tightest === null
+                    text: "Agents"
+                    role: "callout"
                     font.weight: Font.DemiBold
                 }
-
-                Repeater {
-                    model: root.windows
-                    delegate: StatBar {
-                        required property var modelData
-                        icon: "󰓅"
-                        label: modelData.label
-                        value: Math.round(modelData.usedPercent) + "% used · "
-                            + modelData.remainingPercent + "% left"
-                        fraction: Number(modelData.usedPercent) / 100
-                        accent: root.limitColor(Number(modelData.remainingPercent))
-                    }
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                visible: !!root.cycle?.daily?.length
-                Text {
-                    text: "Recorded usage by provider"
-                    color: Theme.foreground
-                    font.family: Theme.displayFont
-                    font.pixelSize: 12
+                F1Text {
+                    text: AgentUsageData.ready ? Fmt.usd(AgentUsageData.today.cost) : "…"
+                    role: "callout"
+                    numeric: true
                     font.weight: Font.DemiBold
-                }
-                Item { Layout.fillWidth: true }
-                Text {
-                    text: "share of tokens"
-                    color: Theme.muted
-                    font.family: Theme.displayFont
-                    font.pixelSize: 9
+                    color: root.band === 2 ? Theme.love : F1Hub.ink
                 }
             }
 
-            Repeater {
-                model: root.providers
-                delegate: Rectangle {
-                    id: providerCard
-                    required property var modelData
-                    required property int index
-                    readonly property var modelRows: root.providerModels(modelData.id)
-                    Layout.fillWidth: true
-                    implicitHeight: cardBody.implicitHeight + 18
-                    radius: 10
-                    color: Theme.surface
-                    border.width: 1
-                    border.color: Theme.highlightLow
+            AgentUsagePeek {
+                id: peek
+                x: (shape.width - width) / 2
+                y: 20
+                width: win.peekSize.width - 44
+                opacity: root.state_ === "peek" ? 1 : 0
+                scale: root.state_ === "peek" ? 1 : 0.94
+                visible: opacity > 0.01
+                Behavior on opacity { NumberAnimation { duration: root.state_ === "peek" ? 280 : 120; easing.type: Easing.OutCubic } }
+                Behavior on scale { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+                onOpenRequested: AgentUsageData.show(root.screenName)
+            }
 
-                    ColumnLayout {
-                        id: cardBody
-                        anchors.fill: parent
-                        anchors.margins: 9
-                        spacing: 5
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 7
-
-                            Text {
-                                text: root.providerIcon(providerCard.modelData.id)
-                                color: [Theme.iris, Theme.foam, Theme.gold, Theme.rose][providerCard.index % 4]
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 15
-                            }
-
-                            Text {
-                                text: providerCard.modelData.label
-                                color: Theme.foreground
-                                font.family: Theme.displayFont
-                                font.pixelSize: 11
-                                font.weight: Font.DemiBold
-                            }
-
-                            Text {
-                                text: (providerCard.modelData.sessions || providerCard.modelData.events || 0) + " sessions"
-                                color: Theme.muted
-                                font.family: Theme.displayFont
-                                font.pixelSize: 9
-                            }
-
-                            Item { Layout.fillWidth: true }
-
-                            Text {
-                                text: Fmt.usd(providerCard.modelData.costUsd)
-                                color: Theme.gold
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 11
-                                font.weight: Font.DemiBold
-                            }
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: 4
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: 2
-                                color: Theme.highlightLow
-                            }
-                            Rectangle {
-                                width: parent.width * Math.max(0, Math.min(1,
-                                    Number(providerCard.modelData.totalTokens || 0) / Math.max(1, root.recordedTokens)))
-                                height: parent.height
-                                radius: 2
-                                color: [Theme.iris, Theme.foam, Theme.gold, Theme.rose][providerCard.index % 4]
-                                Behavior on width { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
-                            }
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            visible: providerCard.modelRows.length > 0
-                            text: providerCard.modelRows.map(m => m.model + "  ·  " + Fmt.tokens(m.totalTokens)).join("     ")
-                            color: Theme.subtle
-                            font.family: Theme.displayFont
-                            font.pixelSize: 9
-                            elide: Text.ElideRight
-                        }
-
-                        Text {
-                            visible: providerCard.modelRows.length === 0
-                            text: Fmt.tokens(providerCard.modelData.totalTokens || 0) + " recorded tokens"
-                            color: Theme.subtle
-                            font.family: Theme.displayFont
-                            font.pixelSize: 9
-                        }
-                    }
+            // Full: built on first open, then kept warm.
+            Loader {
+                id: hubLoader
+                x: (shape.width - width) / 2
+                width: win.fullSize.width
+                height: win.fullSize.height
+                property bool warm: false
+                active: root.full || warm
+                onLoaded: warm = true
+                opacity: root.full ? 1 : 0
+                scale: root.full ? 1 : 0.94
+                visible: opacity > 0.01
+                Behavior on opacity { NumberAnimation { duration: root.full ? 320 : 120; easing.type: Easing.OutCubic } }
+                Behavior on scale { NumberAnimation { duration: 380; easing.type: Easing.OutQuint } }
+                sourceComponent: AgentUsageContent {
+                    anchors.fill: parent
+                    anchors.margins: 22
+                    anchors.topMargin: 20
                 }
-            }
-
-            Text {
-                visible: root.providers.length === 0 && root.windows.length === 0
-                Layout.fillWidth: true
-                text: AgentUsageData.loading ? "Loading agent activity…"
-                    : AgentUsageData.lastError !== "" ? AgentUsageData.lastError
-                    : "No agent activity recorded yet."
-                wrapMode: Text.WordWrap
-                color: AgentUsageData.lastError !== "" ? Theme.gold : Theme.subtle
-                font.family: Theme.displayFont
-                font.pixelSize: 10
-            }
-
-            Text {
-                visible: AgentUsageData.lastError !== "" && (root.providers.length > 0 || root.windows.length > 0)
-                Layout.fillWidth: true
-                text: AgentUsageData.lastError
-                wrapMode: Text.WordWrap
-                color: Theme.gold
-                font.family: Theme.displayFont
-                font.pixelSize: 9
             }
         }
     }

@@ -4,206 +4,114 @@ import QtQuick.Layouts
 import "."
 
 F1Page {
-    index: 1
-    
+    id: page
+    readonly property var w: F1Data.weekend
+    readonly property var h: F1Data.history
+
+    hints: [["s", "Sectors"], ["d", "Straights"]]
+    Component.onCompleted: F1Data.loadHistory()
+    Connections { target: F1Data; function onWeekendChanged() { F1Data.loadHistory() } }
+
+    function handleKey(e) {
+        if (e.key === Qt.Key_S) { map.showSectors = !map.showSectors; return true }
+        if (e.key === Qt.Key_D) { map.showStraights = !map.showStraights; return true }
+        return false
+    }
+
     RowLayout {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        spacing: 16
+        anchors.fill: parent
+        spacing: 12
 
-        ColumnLayout {
-            Layout.preferredWidth: 340
-            Layout.maximumWidth: 340
-            Layout.fillWidth: false
+        F1Group {
+            title: page.w?.circuit ?? ""
+            detail: F1Data.track?.corners ? F1Data.track.corners.length + " turns" : ""
+            Layout.preferredWidth: 5
+            Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 8
-
-            RowLayout {
+            pad: 8
+            TrackMap {
+                id: map
                 Layout.fillWidth: true
-                ColumnLayout {
-                    spacing: 0
-                    Layout.fillWidth: true
-                    F1Label { text: [(F1Data.nextRace?.Circuit.Location.locality ?? ""), (F1Data.nextRace?.Circuit.Location.country ?? "")].join(", ").toUpperCase() }
-                    Text {
-                        text: F1Data.nextRace?.Circuit.circuitName ?? ""
-                        color: Theme.foreground
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 15
-                        font.weight: Font.Black
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
-                }
-                F1Pill { visible: !!F1Data.track?.corners; text: (F1Data.track?.corners?.length ?? 0) + " TURNS"; tint: Theme.gold }
-            }
-
-            F1Card {
-                pad: 4
                 Layout.fillHeight: true
-                TrackMap {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.minimumHeight: 180
-                    track: F1Data.track
-                }
+                track: F1Data.track
             }
-
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 10
+                Layout.margins: 6
+                spacing: 12
                 Repeater {
-                    model: [["S1", Theme.love], ["S2", Theme.foam], ["S3", Theme.gold]]
-                    RowLayout {
+                    model: (F1Data.track?.sectors?.[0] ?? 0) > 0
+                        ? [["Sector 1", Theme.love], ["Sector 2", Theme.foam], ["Sector 3", Theme.gold]] : []
+                    Row {
                         required property var modelData
-                        spacing: 4
-                        Rectangle { implicitWidth: 14; implicitHeight: 3; radius: 1.5; color: parent.modelData[1] }
-                        Text { text: parent.modelData[0]; color: Theme.subtle; font.family: Theme.fontFamily; font.pixelSize: 10; font.weight: Font.Bold }
+                        spacing: 5
+                        opacity: map.showSectors ? 1 : 0.35
+                        Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 8; height: 8; radius: 4; color: modelData[1] }
+                        F1Text { text: modelData[0]; role: "caption"; tone: "secondary" }
                     }
                 }
                 Item { Layout.fillWidth: true }
-                Rectangle { implicitWidth: 14; implicitHeight: 6; radius: 3; color: Theme.alpha(Theme.foam, 0.28); border.width: 1; border.color: Theme.foam }
-                Text { text: "Straight mode (est.)"; color: Theme.subtle; font.family: Theme.fontFamily; font.pixelSize: 10; font.weight: Font.Bold }
+                F1Text { text: "Straight mode (estimated)"; role: "caption"; tone: "tertiary"; opacity: map.showStraights ? 1 : 0.35 }
             }
         }
 
         ColumnLayout {
+            Layout.preferredWidth: 4
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 8
+            spacing: 12
 
-            F1Label { text: "CIRCUIT RECORDS" }
-            GridLayout {
-                Layout.fillWidth: true
-                columns: 3
-                rowSpacing: 8
-                columnSpacing: 8
-
-                F1StatTile {
-                    fixedHeight: 84
-                    label: "RACE LAP RECORD"
-                    team: F1Data.circuit?.lapRecord?.team ?? ""
-                    value: F1Data.circuit?.lapRecord?.time ?? ""
-                    sub: F1Data.circuit?.lapRecord ? F1Data.circuit.lapRecord.name.split(" ").pop() + " · " + F1Data.circuit.lapRecord.season : ""
-                }
-                F1StatTile {
-                    fixedHeight: 84
-                    label: "QUALI RECORD"
-                    team: F1Data.circuit?.qualiRecord?.team ?? ""
-                    value: F1Data.circuit?.qualiRecord?.time ?? ""
-                    sub: F1Data.circuit?.qualiRecord ? F1Data.circuit.qualiRecord.name.split(" ").pop() + " · " + F1Data.circuit.qualiRecord.season : ""
-                }
-                F1StatTile {
-                    fixedHeight: 84
-                    label: "FIRST GRAND PRIX"
-                    value: F1Data.circuit?.firstYear ?? ""
-                    sub: F1Data.circuit?.races ? F1Data.circuit.races + " races · " + F1Data.circuit.raceLaps + " laps" : ""
-                }
-                F1StatTile {
-                    fixedHeight: 84
-                    label: "MOST WINS"
-                    team: F1Data.circuit?.mostWins?.team ?? ""
-                    value: F1Data.circuit?.mostWins?.names ?? ""
-                    sub: F1Data.circuit?.mostWins ? F1Data.circuit.mostWins.count + " victories" : ""
-                }
-                F1StatTile {
-                    fixedHeight: 84
-                    label: "MOST POLES"
-                    team: F1Data.circuit?.mostPoles?.team ?? ""
-                    value: F1Data.circuit?.mostPoles?.names ?? ""
-                    sub: F1Data.circuit?.mostPoles ? F1Data.circuit.mostPoles.count + " poles" : ""
-                }
-                F1StatTile {
-                    fixedHeight: 84
-                    label: "MOST PODIUMS"
-                    team: F1Data.circuit?.mostPodiums?.team ?? ""
-                    value: F1Data.circuit?.mostPodiums?.names ?? ""
-                    sub: F1Data.circuit?.mostPodiums ? F1Data.circuit.mostPodiums.count + " podiums" : ""
-                }
-                F1StatTile {
-                    fixedHeight: 84
-                    label: "MOST TEAM WINS"
-                    team: F1Data.circuit?.mostTeamWins?.team ?? ""
-                    value: F1Data.circuit?.mostTeamWins?.names ?? ""
-                    sub: F1Data.circuit?.mostTeamWins ? F1Data.circuit.mostTeamWins.count + " victories" : ""
-                }
-                F1StatTile {
-                    fixedHeight: 84
-                    readonly property var both: {
-                        const c = F1Data.circuit
-                        if (!c?.winners || !c?.poles) return []
-                        return Object.keys(c.winners).filter(y => c.poles[y])
+            F1Group {
+                title: "History"
+                detail: page.h?.races ? page.h.races + " Grands Prix since " + page.h.first : ""
+                Layout.fillHeight: false
+                GridLayout {
+                    Layout.fillWidth: true
+                    columns: 2
+                    columnSpacing: 0
+                    rowSpacing: 0
+                    F1Stat {
+                        label: "Most wins"
+                        value: page.h?.mostWins?.names.join(", ") ?? ""
+                        sub: page.h?.mostWins ? page.h.mostWins.count + " victories" : ""
+                        accent: F1Data.teamColour(page.h?.mostWins?.team ?? "", F1Hub.ink)
                     }
-                    readonly property int converted: both.filter(y => F1Data.circuit.winners[y] === F1Data.circuit.poles[y]).length
-                    label: "POLE TO WIN"
-                    value: both.length ? converted + " of " + both.length : ""
-                    sub: both.length ? Math.round(converted / both.length * 100) + "% won from pole" : ""
-                }
-                F1StatTile {
-                    fixedHeight: 84
-                    label: "LOWEST GRID WIN"
-                    team: F1Data.circuit?.lowestGridWin?.team ?? ""
-                    value: F1Data.circuit?.lowestGridWin ? "P" + F1Data.circuit.lowestGridWin.grid : ""
-                    sub: F1Data.circuit?.lowestGridWin ? F1Data.circuit.lowestGridWin.name.split(" ").pop() + " · " + F1Data.circuit.lowestGridWin.season : ""
+                    F1Stat {
+                        label: "Most team wins"
+                        value: page.h?.mostTeamWins?.names.join(", ") ?? ""
+                        sub: page.h?.mostTeamWins ? page.h.mostTeamWins.count + " victories" : ""
+                        accent: F1Data.teamColour(page.h?.mostTeamWins?.team ?? "", F1Hub.ink)
+                    }
+                    F1Stat {
+                        label: "Won from pole"
+                        value: page.h?.races ? Math.round(page.h.fromPole / page.h.races * 100) + "%" : ""
+                        sub: page.h?.races ? page.h.fromPole + " of " + page.h.races : ""
+                    }
+                    F1Stat {
+                        label: "Lowest grid win"
+                        value: page.h?.lowest ? "P" + page.h.lowest.grid : ""
+                        sub: page.h?.lowest ? page.h.lowest.last + " · " + page.h.lowest.season : ""
+                    }
+                    F1Stat { label: "Race distance"; value: page.h?.laps ? page.h.laps + " laps" : "" }
+                    F1Stat { label: "Location"; value: page.w?.locality ?? ""; sub: page.w?.country ?? "" }
                 }
             }
 
-            F1Label { text: "RECENT WINNERS"; topPadding: 2 }
-            RowLayout {
-                Layout.fillWidth: true
+            F1Group {
+                title: "Recent winners"
                 Layout.fillHeight: true
-                spacing: 8
                 Repeater {
-                    model: F1Data.circuit?.recentWinners ?? []
-                    Rectangle {
-                        id: winnerCard
+                    model: page.h?.recent ?? []
+                    F1Row {
                         required property var modelData
-                        readonly property color tint: F1Data.teamColour(modelData.team)
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        Layout.preferredWidth: 1
-                        Layout.minimumHeight: 64
-                        radius: 10
-                        color: Qt.rgba(tint.r, tint.g, tint.b, 0.18)
-                        border.width: 1
-                        border.color: Qt.rgba(tint.r, tint.g, tint.b, 0.55)
-
-                        ColumnLayout {
-                            anchors.centerIn: parent
-                            width: parent.width - 12
-                            spacing: 3
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: winnerCard.modelData.season
-                                color: Theme.subtle
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 11
-                                font.weight: Font.Bold
-                            }
-                            Image {
-                                Layout.alignment: Qt.AlignHCenter
-                                Layout.preferredWidth: 34
-                                Layout.preferredHeight: 26
-                                source: F1Data.teamLogo(winnerCard.modelData.team)
-                                fillMode: Image.PreserveAspectFit
-                                asynchronous: true
-                                smooth: true
-                            }
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: winnerCard.modelData.code
-                                color: Theme.foreground
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 15
-                                font.weight: Font.Black
-                            }
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: "from P" + winnerCard.modelData.grid
-                                color: Theme.muted
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 10
-                            }
-                        }
+                        required property int index
+                        implicitHeight: 30
+                        position: modelData.season
+                        title: modelData.name
+                        subtitle: modelData.grid > 0 ? "from P" + modelData.grid : "from pit lane"
+                        value: modelData.time
+                        team: modelData.team
+                        separator: index < (page.h?.recent.length ?? 0) - 1
                     }
                 }
             }

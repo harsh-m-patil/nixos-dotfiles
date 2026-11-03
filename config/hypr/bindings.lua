@@ -22,6 +22,7 @@ hl.bind(mainMod .. " + T", hl.dsp.layout("togglesplit"))    -- dwindle only
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("qs ipc call bar toggle || qs -d"))
 -- F1 team themes (quickshell): quick cycle, visual picker, wallpaper within pool (Omarchy-style)
+hl.bind(mainMod .. " + SHIFT + F", hl.dsp.exec_cmd("qs ipc call f1 toggle"))
 hl.bind(mainMod .. " + SHIFT + G", hl.dsp.exec_cmd("qs ipc call theme togglePicker"))
 hl.bind(mainMod .. " + CTRL + SPACE", hl.dsp.exec_cmd("qs ipc call theme toggleWallpaperPicker"))
 hl.bind(mainMod .. " + ALT + SPACE", hl.dsp.exec_cmd("qs ipc call theme cycleWallpaper"))

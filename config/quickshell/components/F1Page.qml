@@ -1,18 +1,19 @@
 import QtQuick
-import QtQuick.Layouts
 
-import "."
+// Base for hub pages. The window offers each key to the current page first;
+// return true from handleKey to consume it. `hints` feed the footer.
+Item {
+    property var hints: []
+    function handleKey(event) { return false }
 
-ColumnLayout {
-    property int index
-    property int current
-    readonly property int offset: index - current
-    width: parent.width
-    height: parent.height
-    spacing: 10
-    opacity: offset === 0 ? 1 : 0
-    x: offset === 0 ? 0 : offset > 0 ? 40 : -40
-    visible: opacity > 0.01
-    Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
-    Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
+    // j/k/↑/↓ → -1/+1, 0 otherwise
+    function vertical(event) {
+        const k = event.key
+        return k === Qt.Key_J || k === Qt.Key_Down ? 1 : k === Qt.Key_K || k === Qt.Key_Up ? -1 : 0
+    }
+    function horizontal(event) {
+        const k = event.key
+        return k === Qt.Key_L || k === Qt.Key_Right ? 1 : k === Qt.Key_H || k === Qt.Key_Left ? -1 : 0
+    }
+    function clamp(v, n) { return Math.max(0, Math.min(n - 1, v)) }
 }

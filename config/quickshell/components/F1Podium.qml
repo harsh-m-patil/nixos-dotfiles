@@ -3,80 +3,96 @@ import QtQuick.Layouts
 
 import "."
 
+// Top three as portrait cards, winner centred and tallest. `entries` are result rows.
 RowLayout {
     id: podium
-    // [{ code, value }] in finishing order
     property var entries: []
-    property real headshotScale: 1
+    property int height1: 150
     Layout.fillWidth: true
     visible: entries.length > 0
-    spacing: 8
+    spacing: 10
 
     Repeater {
         model: [1, 0, 2]
-        ColumnLayout {
+        Item {
             id: slot
             required property int modelData
             readonly property var entry: podium.entries[modelData] ?? null
-            readonly property color tint: entry ? F1Data.driverColour(entry.code) : Theme.muted
+            readonly property color tint: F1Data.teamColour(entry?.team ?? "")
             Layout.fillWidth: true
             Layout.preferredWidth: 1
-            Layout.alignment: Qt.AlignBottom
-            spacing: -6
+            Layout.fillHeight: true
+            implicitHeight: podium.height1 - modelData * 16
             visible: entry !== null
 
-            Image {
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.preferredHeight: (slot.modelData === 0 ? 76 : 60) * podium.headshotScale
-                source: slot.entry ? F1Data.headshot(slot.entry.code) : ""
-                fillMode: height > width ? Image.PreserveAspectCrop : Image.PreserveAspectFit
-                smooth: true
-                mipmap: true
-                asynchronous: true
-                z: 0
-            }
             Rectangle {
-                z: 1
-                Layout.fillWidth: true
-                implicitHeight: slot.modelData === 0 ? 64 : slot.modelData === 1 ? 52 : 44
-                radius: 10
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: parent.height * (1 - slot.modelData * 0.1)
+                radius: 14
+                clip: true
                 gradient: Gradient {
-                    GradientStop { position: 0; color: Qt.rgba(slot.tint.r, slot.tint.g, slot.tint.b, 0.55) }
-                    GradientStop { position: 1; color: Qt.rgba(slot.tint.r, slot.tint.g, slot.tint.b, 0.10) }
+                    GradientStop { position: 0; color: Theme.alpha(slot.tint, 0.28) }
+                    GradientStop { position: 1; color: Theme.alpha(slot.tint, 0.04) }
                 }
                 border.width: 1
-                border.color: Qt.rgba(slot.tint.r, slot.tint.g, slot.tint.b, 0.6)
-                Rectangle { anchors.fill: parent; z: -1; radius: parent.radius; color: Theme.background }
+                border.color: Theme.alpha(slot.tint, 0.25)
+
                 Image {
                     anchors.left: parent.left
+                    anchors.right: parent.right
                     anchors.top: parent.top
-                    anchors.margins: 6
-                    width: 30
-                    height: 24
-                    source: slot.entry?.team ? F1Data.teamLogo(slot.entry.team) : ""
-                    fillMode: Image.PreserveAspectFit
+                    anchors.bottom: parent.bottom
+                    anchors.topMargin: 34
+                    anchors.bottomMargin: 40
+                    source: slot.entry ? F1Data.headshot(slot.entry.code) : ""
+                    sourceSize.height: 480
+                    fillMode: Image.PreserveAspectCrop
+                    verticalAlignment: Image.AlignTop
                     asynchronous: true
                     smooth: true
                 }
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 0
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: slot.entry?.code ?? ""
-                        color: Theme.foreground
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 15
-                        font.weight: Font.Black
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "P" + (slot.modelData + 1) + (slot.entry?.value ? "  " + slot.entry.value : "")
-                        color: slot.modelData === 0 ? Theme.gold : Theme.subtle
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 10
-                        font.weight: Font.Bold
+
+                F1Text {
+                    x: 10; y: 8
+                    text: String(slot.modelData + 1)
+                    role: "title2"
+                    numeric: true
+                    tone: slot.modelData === 0 ? "primary" : "secondary"
+                }
+                Image {
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 10
+                    width: 30
+                    height: 22
+                    source: slot.entry?.team ? F1Data.teamLogo(slot.entry.team) : ""
+                    sourceSize.height: 44
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                }
+
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: 40
+                    color: Theme.alpha(Theme.background, 0.72)
+                    Column {
+                        anchors.centerIn: parent
+                        F1Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: slot.entry?.last ?? (slot.entry?.name ?? "").split(" ").pop()
+                            role: "headline"
+                        }
+                        F1Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: slot.entry?.time ?? ""
+                            role: "caption"
+                            tone: "secondary"
+                            numeric: true
+                        }
                     }
                 }
             }

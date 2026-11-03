@@ -2,41 +2,43 @@ import QtQuick
 
 import "."
 
+// Round glyph button. `primary` draws a filled disc (play / pause); `accent` marks an on state.
 Item {
     id: root
 
     property string icon: ""
     property bool enabled: true
     property bool accent: false
+    property bool primary: false
     property int iconSize: Theme.fontSize
+    property int size: iconSize + 14
     signal activated()
 
-    property real pressScale: 1
-    property bool hovered: false
+    implicitWidth: size
+    implicitHeight: size
+    opacity: enabled ? 1 : 0.35
 
-    implicitWidth: iconSize + 12
-    implicitHeight: 24
+    Rectangle {
+        anchors.fill: parent
+        radius: width / 2
+        color: root.primary ? F1Hub.ink
+            : root.accent ? Theme.alpha(Theme.iris, 0.16)
+            : hover.hovered && root.enabled ? F1Hub.fillStrong : "transparent"
+        scale: tap.pressed ? 0.9 : 1
+        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutQuint } }
+    }
 
     Text {
         anchors.centerIn: parent
         text: root.icon
         font.family: Theme.fontFamily
         font.pixelSize: root.iconSize
-        color: !root.enabled ? Theme.muted
-            : (root.accent ? Theme.iris : (root.hovered ? Theme.foreground : Theme.subtle))
-        scale: root.pressScale
-        Behavior on scale { NumberAnimation { duration: 100 } }
+        color: root.primary ? F1Hub.surface : root.accent ? Theme.iris : hover.hovered ? F1Hub.ink : F1Hub.ink2
+        scale: tap.pressed ? 0.9 : 1
+        Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutQuint } }
     }
 
-    MouseArea {
-        anchors.fill: parent
-        enabled: root.enabled
-        hoverEnabled: true
-        onEntered: root.hovered = true
-        onExited: root.hovered = false
-        onPressed: root.pressScale = 0.88
-        onReleased: root.pressScale = 1
-        onCanceled: root.pressScale = 1
-        onClicked: root.activated()
-    }
+    HoverHandler { id: hover; enabled: root.enabled; cursorShape: Qt.PointingHandCursor }
+    TapHandler { id: tap; enabled: root.enabled; onTapped: root.activated() }
 }

@@ -79,6 +79,14 @@ ShellRoot {
         }
     }
 
+    IpcHandler {
+        target: "f1"
+
+        function toggle(): void { F1Hub.toggle() }
+        function open(page: int): void { F1Hub.show(page) }
+        function refresh(): void { F1Data.refresh(true) }
+    }
+
     SystemWindow {}
     ThemePickerWindow {}
     WallpaperPickerWindow {}
