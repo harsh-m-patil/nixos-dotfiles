@@ -9,5 +9,5 @@ confirm-close-surface = false
 app-notifications = no-config-reload
 
 background-blur = true
-background-opacity = 0.85
+background-opacity = 0.95
 window-padding-x = 5

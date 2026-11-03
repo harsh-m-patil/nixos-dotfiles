@@ -91,6 +91,9 @@ Singleton {
         killer.command = ["kill", String(pid)]
         killer.running = true
     }
+    function setPowerProfile(profile) {
+        Quickshell.execDetached(["powerprofilesctl", "set", profile])
+    }
 
     Process { id: killer }
 

@@ -18,6 +18,7 @@ Singleton {
 
     property var data: ({})
     readonly property var bar: Object.assign({}, defaults.bar, data.bar ?? {})
+    readonly property bool reducedMotion: data.reducedMotion ?? false
 
     FileView {
         path: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/dotfiles/settings.json"

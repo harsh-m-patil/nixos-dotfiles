@@ -80,9 +80,9 @@ PanelWindow {
                 live.stop()
                 win.committed()
             } else if (k === Qt.Key_Left || k === Qt.Key_H)
-                deck.step(-1)
+                deck.step(-1, event.isAutoRepeat)
             else if (k === Qt.Key_Right || k === Qt.Key_L)
-                deck.step(1)
+                deck.step(1, event.isAutoRepeat)
             else if (k === Qt.Key_Home)
                 deck.currentIndex = 0
             else if (k === Qt.Key_End)

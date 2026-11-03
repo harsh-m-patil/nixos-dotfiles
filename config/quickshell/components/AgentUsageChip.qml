@@ -26,20 +26,22 @@ Item {
     }
 
     property bool hoverPeek: false
+
+    onHoverPeekChanged: hoverPeek ? Motion.claim(root) : Motion.unclaim(root)
     readonly property bool full: AgentUsageData.open && AgentUsageData.screen === screenName
     readonly property string state_: full ? "full" : hoverPeek || alert.running ? "peek" : "compact"
     onState_Changed: if (state_ === "compact") settle.restart()
     Timer { id: settle; interval: 450 }
 
     Timer { id: alert; interval: 6000 }
-    Timer { id: intent; interval: 180; onTriggered: root.hoverPeek = true }
-    Timer { id: leave; interval: 280; onTriggered: root.hoverPeek = false }
+    Timer { id: intent; interval: Motion.instantFor(root) ? 0 : 180; onTriggered: root.hoverPeek = true }
+    Timer { id: leave; interval: 280; onTriggered: { root.hoverPeek = false; Motion.release() } }
 
     readonly property int band: {
         const t = AgentUsageData.tightest
         return !t ? 0 : t.left <= 15 ? 2 : t.left <= 35 ? 1 : 0
     }
-    onBandChanged: if (band > 0 && AgentUsageData.ready) alert.restart()
+    onBandChanged: if (band > 0 && AgentUsageData.ready) { alert.restart(); if (!Motion.reduced) alertPulse.restart() }
 
     PanelWindow {
         id: win
@@ -94,6 +96,9 @@ Item {
             function onFullChanged() { if (root.full) keys.forceActiveFocus() }
         }
 
+        Stagger { target: peek; active: root.state_ === "peek" }
+
+
         RectangularShadow {
             anchors.fill: shape
             radius: shape.radius
@@ -102,7 +107,7 @@ Item {
             spread: -4
             color: Qt.rgba(0, 0, 0, 0.4)
             opacity: root.state_ === "compact" ? 0 : 1
-            Behavior on opacity { NumberAnimation { duration: 240 } }
+            Behavior on opacity { NumberAnimation { duration: root.state_ === "compact" ? 120 : 180; easing.type: Easing.OutCubic } }
         }
 
         Rectangle {
@@ -116,16 +121,17 @@ Item {
             y: root.origin.y
             width: tw
             height: th
-            radius: root.state_ === "compact" ? 14 : root.state_ === "peek" ? 20 : 26
-            color: F1Hub.surface
+            radius: Motion.radius(height, 14)
+            color: Motion.islandFill(root.state_ === "compact")
             border.width: 1
             border.color: F1Hub.hairline
             clip: true
+            scale: press.pressed ? 0.97 : 1
+            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
-            Behavior on x { SpringAnimation { spring: 3.4; damping: 0.3; epsilon: 0.3 } }
-            Behavior on width { SpringAnimation { spring: 3.4; damping: 0.3; epsilon: 0.3 } }
-            Behavior on height { SpringAnimation { spring: 3.4; damping: 0.32; epsilon: 0.3 } }
-            Behavior on radius { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+            Behavior on x { enabled: !Motion.reduced; SpringAnimation { spring: Motion.spring(root.state_); damping: Motion.damping(root.state_); epsilon: 0.3 } }
+            Behavior on width { enabled: !Motion.reduced; SpringAnimation { spring: Motion.spring(root.state_); damping: Motion.damping(root.state_); epsilon: 0.3 } }
+            Behavior on height { enabled: !Motion.reduced; SpringAnimation { spring: Motion.spring(root.state_); damping: Motion.damping(root.state_); epsilon: 0.3 } }
 
             HoverHandler {
                 cursorShape: root.full ? Qt.ArrowCursor : Qt.PointingHandCursor
@@ -134,7 +140,27 @@ Item {
                     else { intent.stop(); leave.restart() }
                 }
             }
+            // The island opened by itself; a pulse of the limit's colour says why.
+            Rectangle {
+                id: alertRing
+                z: 3
+                anchors.fill: parent
+                radius: shape.radius
+                color: "transparent"
+                border.width: 1.5
+                border.color: AgentUsageData.accent
+                opacity: 0
+            }
+            SequentialAnimation {
+                id: alertPulse
+                loops: 2
+                PauseAnimation { duration: 200 }
+                NumberAnimation { target: alertRing; property: "opacity"; to: 1; duration: 220; easing.type: Easing.OutCubic }
+                NumberAnimation { target: alertRing; property: "opacity"; to: 0; duration: 520; easing.type: Easing.OutCubic }
+            }
+
             TapHandler {
+                id: press
                 enabled: root.state_ === "compact"
                 onTapped: AgentUsageData.toggle(root.screenName)
             }
@@ -145,9 +171,10 @@ Item {
                 x: (shape.width - width) / 2
                 height: 28
                 spacing: 8
-                visible: root.state_ === "compact"
-                opacity: visible ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 140 } }
+                opacity: root.state_ === "compact" ? 1 : 0
+                visible: opacity > 0.01
+                // Returns once the collapse is under way, so it lands in a pill-sized shape.
+                Behavior on opacity { SequentialAnimation { PauseAnimation { duration: root.state_ === "compact" ? 50 : 0 } NumberAnimation { duration: root.state_ === "compact" ? 130 : 80; easing.type: Easing.OutCubic } } }
 
                 AgentUsageRing {
                     visible: AgentUsageData.tightest !== null
@@ -175,11 +202,23 @@ Item {
                 x: (shape.width - width) / 2
                 y: win.peekPadV
                 width: implicitWidth
+                transformOrigin: Item.Top
                 opacity: root.state_ === "peek" ? 1 : 0
-                scale: root.state_ === "peek" ? 1 : 0.94
+                scale: root.state_ === "peek" ? 1 : Motion.contentHiddenScale
                 visible: opacity > 0.01
-                Behavior on opacity { NumberAnimation { duration: root.state_ === "peek" ? 280 : 120; easing.type: Easing.OutCubic } }
-                Behavior on scale { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+                Behavior on opacity {
+                    SequentialAnimation {
+                        PauseAnimation { duration: root.state_ === "peek" ? 40 : 0 }
+                        NumberAnimation {
+                            duration: root.state_ === "peek" ? Motion.contentFadeInMs : Motion.contentFadeOutMs
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+                Behavior on scale {
+                    enabled: Motion.contentScaleAnim
+                    NumberAnimation { duration: Motion.contentScaleMs; easing.type: Easing.OutQuint }
+                }
                 onOpenRequested: AgentUsageData.show(root.screenName)
             }
 
@@ -193,11 +232,20 @@ Item {
                 property bool warm: false
                 active: root.full || warm
                 onLoaded: warm = true
+                transformOrigin: Item.Top
                 opacity: root.full ? 1 : 0
-                scale: root.full ? 1 : 0.94
+                scale: root.full ? 1 : Motion.contentHiddenScale
                 visible: opacity > 0.01
-                Behavior on opacity { NumberAnimation { duration: root.full ? 320 : 120; easing.type: Easing.OutCubic } }
-                Behavior on scale { NumberAnimation { duration: 380; easing.type: Easing.OutQuint } }
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: root.full ? (Motion.reduced ? 160 : 240) : Motion.contentFadeOutMs
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on scale {
+                    enabled: Motion.contentScaleAnim
+                    NumberAnimation { duration: Motion.contentScaleMs + 40; easing.type: Easing.OutQuint }
+                }
                 sourceComponent: AgentUsageContent {
                     anchors.fill: parent
                     anchors.margins: 16

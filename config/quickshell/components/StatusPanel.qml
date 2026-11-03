@@ -155,7 +155,10 @@ ColumnLayout {
                     required property var modelData
                     readonly property bool active: SystemData.s.profile === modelData[1]
                     width: gear.implicitWidth + 14; height: 22; radius: 6
-                    color: active ? Theme.alpha(Theme.iris, 0.16) : "transparent"
+                    scale: profPress.pressed ? 0.96 : 1
+                    Behavior on scale { NumberAnimation { duration: 80; easing.type: Easing.OutCubic } }
+                    color: active ? Theme.alpha(Theme.iris, profPress.pressed ? 0.22 : 0.16)
+                        : profPress.pressed ? F1Hub.fillStrong : profHover.hovered ? F1Hub.fill : "transparent"
                     border.width: 1
                     border.color: active ? Theme.alpha(Theme.iris, 0.5) : F1Hub.hairline
                     HudLabel {
@@ -165,6 +168,11 @@ ColumnLayout {
                         color: parent.active ? Theme.iris : F1Hub.ink3
                         font.letterSpacing: 1
                     }
+                    HoverHandler { id: profHover; cursorShape: Qt.PointingHandCursor }
+                    TapHandler {
+                        id: profPress
+                        onTapped: SystemData.setPowerProfile(parent.modelData[1])
+                    }
                 }
             }
         }
@@ -172,12 +180,14 @@ ColumnLayout {
             implicitWidth: monText.implicitWidth + 20
             implicitHeight: 26
             radius: 8
-            color: monHover.hovered ? F1Hub.fillStrong : F1Hub.fill
+            scale: monPress.pressed ? 0.96 : 1
+            Behavior on scale { NumberAnimation { duration: 80; easing.type: Easing.OutCubic } }
+            color: monPress.pressed ? F1Hub.fillStrong : monHover.hovered ? F1Hub.fillStrong : F1Hub.fill
             border.width: 1
             border.color: F1Hub.hairline
             HudLabel { id: monText; anchors.centerIn: parent; text: "󰨇  MONITOR"; color: F1Hub.ink }
             HoverHandler { id: monHover; cursorShape: Qt.PointingHandCursor }
-            TapHandler { onTapped: SystemData.windowOpen = true }
+            TapHandler { id: monPress; onTapped: SystemData.windowOpen = true }
         }
     }
 
@@ -301,25 +311,23 @@ ColumnLayout {
     }
 
     // Levels
-    RowLayout {
+    ColumnLayout {
         Layout.fillWidth: true
         spacing: 6
-        HudBar {
+        StatusSlider {
             icon: StatusData.volumeIcon
-            label: StatusData.muted ? "MUTE" : "VOL"
+            title: StatusData.muted ? "Muted" : "Volume"
             value: StatusData.volume
             dimmed: StatusData.muted
-            warnAbove: 1
             selected: panel.current === "volume"
             onMoved: v => StatusData.setVolume(v)
             onIconTapped: StatusData.toggleMute()
         }
-        HudBar {
+        StatusSlider {
             visible: StatusData.hasBacklight
             icon: "󰃟"
-            label: "LCD"
+            title: "Brightness"
             value: StatusData.brightness
-            accent: Theme.gold
             selected: panel.current === "brightness"
             onMoved: v => StatusData.setBrightness(v)
         }
@@ -391,7 +399,7 @@ ColumnLayout {
                         RotationAnimator on rotation {
                             from: 0; to: 360; loops: Animation.Infinite
                             duration: Math.max(250, 600000 / Math.max(1, blade.parent.modelData))
-                            running: blade.parent.spinning && blade.visible
+                            running: blade.parent.spinning && blade.visible && !Motion.reduced
                         }
                     }
                     Column {

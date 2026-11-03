@@ -44,7 +44,7 @@ Item {
         radius: 1
         width: Math.max(2, (parent.width - 68) * row.bar)
         color: Theme.alpha(row.tint, 0.55)
-        Behavior on width { NumberAnimation { duration: 420; easing.type: Easing.OutQuint } }
+        Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
     }
 
     RowLayout {

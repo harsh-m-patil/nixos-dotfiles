@@ -14,12 +14,16 @@ Item {
     property real cardHeight: 360
     property real spread: cardWidth * 0.38
     property Component card
+    // Held arrow keys flick through cards; keep up with the repeat instead of trailing it.
+    property bool rushing: false
+    readonly property int stepMs: rushing ? 70 : 180
 
     signal activated(int index)
 
     readonly property int count: model ? model.length : 0
 
-    function step(delta) {
+    function step(delta, repeat) {
+        rushing = !!repeat
         if (count > 0)
             currentIndex = (currentIndex + delta + count) % count
     }
@@ -56,9 +60,9 @@ Item {
             opacity: distance > 4 ? 0 : 1
             visible: opacity > 0
 
-            Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-            Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-            Behavior on scale { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: deck.stepMs; easing.type: Easing.OutCubic } }
+            Behavior on y { NumberAnimation { duration: deck.stepMs; easing.type: Easing.OutCubic } }
+            Behavior on scale { NumberAnimation { duration: deck.stepMs; easing.type: Easing.OutCubic } }
             Behavior on opacity { NumberAnimation { duration: 180 } }
 
             transform: Rotation {
@@ -66,7 +70,7 @@ Item {
                 origin.y: slot.height / 2
                 axis { x: 0; y: 1; z: 0 }
                 angle: Math.max(-40, Math.min(40, -slot.offset * 14))
-                Behavior on angle { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+                Behavior on angle { NumberAnimation { duration: deck.stepMs; easing.type: Easing.OutCubic } }
             }
 
             Loader {

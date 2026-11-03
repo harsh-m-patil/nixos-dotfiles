@@ -2,7 +2,7 @@ import QtQuick
 
 import "."
 
-// Odometer readout: each character of `text` sits in its own drum cell; digits roll when they change.
+// Odometer readout: each character of `text` is clipped to its own slot; digits roll in when they change.
 Column {
     id: odo
     property string label
@@ -10,57 +10,56 @@ Column {
     property string sub
     property int cell: 16
     property color accent: Theme.iris
-    spacing: 3
+    spacing: 2
 
     Text {
-        text: odo.label.toUpperCase()
-        color: odo.accent
-        font.family: Theme.fontFamily
-        font.pixelSize: 9
-        font.weight: Font.Bold
-        font.letterSpacing: 1.8
+        text: odo.label
+        color: F1Hub.ink2
+        font.family: Theme.displayFont
+        font.pixelSize: 11
+        font.weight: Font.Medium
     }
     Row {
-        spacing: 2
+        spacing: 0
         Repeater {
             model: odo.text.length
-            Rectangle {
+            Item {
                 required property int index
                 readonly property string modelData: odo.text.charAt(index)
                 readonly property bool digit: /[0-9]/.test(modelData)
-                width: digit ? odo.cell : odo.cell * 0.55
-                height: odo.cell * 1.45
-                radius: 3
-                color: digit ? Theme.alpha(Theme.foreground, 0.06) : "transparent"
-                border.width: digit ? 1 : 0
-                border.color: F1Hub.hairline
+                width: digit ? odo.cell * 0.68 : glyph.implicitWidth + 1
+                height: odo.cell * 1.35
                 clip: true
                 Text {
                     id: glyph
                     anchors.centerIn: parent
                     text: parent.modelData
                     color: parent.digit ? F1Hub.ink : F1Hub.ink3
-                    font.family: Theme.fontFamily
-                    font.pixelSize: odo.cell * 0.95
+                    font.family: Theme.displayFont
+                    font.pixelSize: odo.cell * 1.15
                     font.weight: Font.Bold
                     font.features: { "tnum": 1 }
                     transform: Translate { id: shift }
-                    onTextChanged: roll.restart()
-                    NumberAnimation {
-                        id: roll
-                        target: shift
-                        property: "y"
-                        from: -odo.cell * 1.45
-                        to: 0
-                        duration: 320
-                        easing.type: Easing.OutBack
+                    onTextChanged: {
+                        if (Motion.reduced) {
+                            shift.y = 0
+                            return
+                        }
+                        roll.restart()
                     }
-                }
-                Rectangle {
-                    visible: parent.digit
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width; height: 1
-                    color: Theme.alpha(Theme.background, 0.5)
+                    ParallelAnimation {
+                        id: roll
+                        NumberAnimation {
+                            target: shift; property: "y"
+                            from: -odo.cell * 0.9; to: 0
+                            duration: 420; easing.type: Easing.OutQuint
+                        }
+                        NumberAnimation {
+                            target: glyph; property: "opacity"
+                            from: 0; to: 1
+                            duration: 260; easing.type: Easing.OutCubic
+                        }
+                    }
                 }
             }
         }
@@ -69,7 +68,7 @@ Column {
         visible: odo.sub !== ""
         text: odo.sub
         color: F1Hub.ink3
-        font.family: Theme.fontFamily
+        font.family: Theme.displayFont
         font.pixelSize: 10
     }
 }

@@ -29,7 +29,10 @@ Rectangle {
         width: Math.max(height, parent.width * Math.min(1, slider.value))
         radius: slider.radius
         color: slider.dimmed ? F1Hub.fillStrong : Theme.alpha(F1Hub.ink, 0.86)
-        Behavior on width { enabled: !drag.active; SpringAnimation { spring: 4; damping: 0.4; epsilon: 0.3 } }
+        Behavior on width {
+            enabled: !drag.active && !Motion.reduced
+            SpringAnimation { spring: Motion.gaugeSpring; damping: Motion.gaugeDamping; epsilon: 0.3 }
+        }
     }
 
     Text {

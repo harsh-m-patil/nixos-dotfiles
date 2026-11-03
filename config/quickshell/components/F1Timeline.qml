@@ -39,7 +39,7 @@ Item {
             radius: 1
             color: F1Data.mode === "live" ? Theme.love : F1Hub.ink
             opacity: 0.7
-            Behavior on width { NumberAnimation { duration: 600; easing.type: Easing.OutQuint } }
+            Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
         }
     }
 
@@ -66,7 +66,7 @@ Item {
                     color: parent.live ? Theme.love : parent.done ? F1Hub.ink : F1Hub.surface
                     border.width: parent.done || parent.live ? 0 : 1.5
                     border.color: parent.next ? F1Hub.ink : Theme.alpha(Theme.foreground, 0.3)
-                    Behavior on width { NumberAnimation { duration: 240; easing.type: Easing.OutBack } }
+                    Behavior on width { NumberAnimation { duration: 240; easing.type: Easing.OutQuint } }
                     SequentialAnimation on opacity {
                         running: stop.live
                         loops: Animation.Infinite

@@ -50,7 +50,7 @@ Item {
                     radius: Math.min(4, width / 2)
                     color: col.sel || tapHover.hovered ? Theme.iris
                         : col.modelData.cost > 0 ? Theme.alpha(Theme.iris, 0.45) : F1Hub.fillStrong
-                    Behavior on height { NumberAnimation { duration: 420; easing.type: Easing.OutQuint } }
+                    Behavior on height { SequentialAnimation { PauseAnimation { duration: Math.min(col.index, 12) * 20 } NumberAnimation { duration: 300; easing.type: Easing.OutQuint } } }
                     Behavior on color { ColorAnimation { duration: 120 } }
                 }
                 HoverHandler { id: tapHover }

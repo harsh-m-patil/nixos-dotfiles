@@ -28,14 +28,16 @@ Item {
     }
 
     property bool hoverPeek: false
+
+    onHoverPeekChanged: hoverPeek ? Motion.claim(root) : Motion.unclaim(root)
     readonly property bool full: Media.open && Media.screen === screenName
     readonly property string state_: full ? "full" : hoverPeek || alert.running ? "peek" : "compact"
     onState_Changed: if (state_ === "compact") settle.restart()
     Timer { id: settle; interval: 450 }
 
     Timer { id: alert; interval: 6000 }
-    Timer { id: intent; interval: 180; onTriggered: root.hoverPeek = true }
-    Timer { id: leave; interval: 280; onTriggered: root.hoverPeek = false }
+    Timer { id: intent; interval: Motion.instantFor(root) ? 0 : 180; onTriggered: root.hoverPeek = true }
+    Timer { id: leave; interval: 280; onTriggered: { root.hoverPeek = false; Motion.release() } }
 
     Connections {
         target: Media
@@ -94,6 +96,9 @@ Item {
             function onFullChanged() { if (root.full) keys.forceActiveFocus() }
         }
 
+        Stagger { target: peek; active: root.state_ === "peek" }
+
+
         RectangularShadow {
             anchors.fill: shape
             radius: shape.radius
@@ -102,7 +107,7 @@ Item {
             spread: -4
             color: Qt.rgba(0, 0, 0, 0.4)
             opacity: root.state_ === "compact" ? 0 : 1
-            Behavior on opacity { NumberAnimation { duration: 240 } }
+            Behavior on opacity { NumberAnimation { duration: root.state_ === "compact" ? 120 : 180; easing.type: Easing.OutCubic } }
         }
 
         Rectangle {
@@ -116,16 +121,17 @@ Item {
             y: root.origin.y
             width: tw
             height: th
-            radius: root.state_ === "compact" ? 14 : 30
-            color: F1Hub.surface
+            radius: Motion.radius(height, 14)
+            color: Motion.islandFill(root.state_ === "compact")
             border.width: 1
             border.color: F1Hub.hairline
             clip: true
+            scale: press.pressed ? 0.97 : 1
+            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
-            Behavior on x { SpringAnimation { spring: 3.4; damping: 0.3; epsilon: 0.3 } }
-            Behavior on width { SpringAnimation { spring: 3.4; damping: 0.3; epsilon: 0.3 } }
-            Behavior on height { SpringAnimation { spring: 3.4; damping: 0.32; epsilon: 0.3 } }
-            Behavior on radius { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+            Behavior on x { enabled: !Motion.reduced; SpringAnimation { spring: Motion.spring(root.state_); damping: Motion.damping(root.state_); epsilon: 0.3 } }
+            Behavior on width { enabled: !Motion.reduced; SpringAnimation { spring: Motion.spring(root.state_); damping: Motion.damping(root.state_); epsilon: 0.3 } }
+            Behavior on height { enabled: !Motion.reduced; SpringAnimation { spring: Motion.spring(root.state_); damping: Motion.damping(root.state_); epsilon: 0.3 } }
 
             HoverHandler {
                 cursorShape: root.full ? Qt.ArrowCursor : Qt.PointingHandCursor
@@ -135,6 +141,7 @@ Item {
                 }
             }
             TapHandler {
+                id: press
                 enabled: root.state_ === "compact"
                 onTapped: Media.toggle(root.screenName)
             }
@@ -149,9 +156,10 @@ Item {
                 x: (shape.width - width) / 2
                 height: 28
                 spacing: 8
-                visible: root.state_ === "compact"
-                opacity: visible ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 140 } }
+                opacity: root.state_ === "compact" ? 1 : 0
+                visible: opacity > 0.01
+                // Returns once the collapse is under way, so it lands in a pill-sized shape.
+                Behavior on opacity { SequentialAnimation { PauseAnimation { duration: root.state_ === "compact" ? 50 : 0 } NumberAnimation { duration: root.state_ === "compact" ? 130 : 80; easing.type: Easing.OutCubic } } }
 
                 MediaArt { Layout.preferredWidth: 20; Layout.preferredHeight: 20; radius: 6 }
                 F1Text {
@@ -170,11 +178,23 @@ Item {
                 x: (shape.width - width) / 2
                 y: 20
                 width: win.peekSize.width - 44
+                transformOrigin: Item.Top
                 opacity: root.state_ === "peek" ? 1 : 0
-                scale: root.state_ === "peek" ? 1 : 0.94
+                scale: root.state_ === "peek" ? 1 : Motion.contentHiddenScale
                 visible: opacity > 0.01
-                Behavior on opacity { NumberAnimation { duration: root.state_ === "peek" ? 260 : 120; easing.type: Easing.OutCubic } }
-                Behavior on scale { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+                Behavior on opacity {
+                    SequentialAnimation {
+                        PauseAnimation { duration: root.state_ === "peek" ? 40 : 0 }
+                        NumberAnimation {
+                            duration: root.state_ === "peek" ? Motion.contentFadeInMs : Motion.contentFadeOutMs
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+                Behavior on scale {
+                    enabled: Motion.contentScaleAnim
+                    NumberAnimation { duration: Motion.contentScaleMs; easing.type: Easing.OutQuint }
+                }
                 onOpenRequested: Media.show(root.screenName)
             }
 
@@ -188,11 +208,20 @@ Item {
                 property bool warm: false
                 active: root.full || warm
                 onLoaded: warm = true
+                transformOrigin: Item.Top
                 opacity: root.full ? 1 : 0
-                scale: root.full ? 1 : 0.94
+                scale: root.full ? 1 : Motion.contentHiddenScale
                 visible: opacity > 0.01
-                Behavior on opacity { NumberAnimation { duration: root.full ? 320 : 120; easing.type: Easing.OutCubic } }
-                Behavior on scale { NumberAnimation { duration: 380; easing.type: Easing.OutQuint } }
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: root.full ? (Motion.reduced ? 160 : 240) : Motion.contentFadeOutMs
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on scale {
+                    enabled: Motion.contentScaleAnim
+                    NumberAnimation { duration: Motion.contentScaleMs + 40; easing.type: Easing.OutQuint }
+                }
                 sourceComponent: MediaExpanded {}
             }
         }

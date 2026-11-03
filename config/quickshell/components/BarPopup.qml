@@ -40,10 +40,18 @@ PopupWindow {
         anchors.fill: parent
         anchors.margins: 8
         opacity: popup.wanted ? 1 : 0
-        scale: popup.wanted ? 1 : 0.96
+        scale: Motion.reduced ? 1 : (popup.wanted ? 1 : 0.96)
         transformOrigin: Item.Top
-        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-        Behavior on scale { NumberAnimation { duration: 260; easing.type: Easing.OutBack } }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: Motion.reduced ? 150 : 200
+                easing.type: Easing.OutCubic
+            }
+        }
+        Behavior on scale {
+            enabled: Motion.contentScaleAnim
+            NumberAnimation { duration: 200; easing.type: Easing.OutQuint }
+        }
 
         HoverHandler { id: bodyHover }
 

@@ -94,6 +94,11 @@ in
               description = "Theme packs from themes/<pack>/ to include, e.g. [ \"core\" \"f1\" ].";
             };
           };
+          reducedMotion = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Bar islands change size instantly and only fade, instead of springing open.";
+          };
           wallpapers.dir = str "${home}/Walls" "Wallpaper root; theme pools live in <dir>/f1/<pool>/.";
           bar = {
             left = widgetList [

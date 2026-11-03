@@ -1,4 +1,6 @@
 singleton Settings 1.0 Settings.qml
+singleton Motion 1.0 Motion.qml
+Stagger 1.0 Stagger.qml
 singleton Theme 1.0 Theme.qml
 singleton WallpaperData 1.0 WallpaperData.qml
 ThemePicker 1.0 ThemePicker.qml
@@ -11,6 +13,7 @@ IslandClickMask 1.0 IslandClickMask.qml
 IslandBackdrop 1.0 IslandBackdrop.qml
 IslandOpenButton 1.0 IslandOpenButton.qml
 TopBar 1.0 TopBar.qml
+singleton WorkspacesData 1.0 WorkspacesData.qml
 WorkspacesRow 1.0 WorkspacesRow.qml
 WindowTitle 1.0 WindowTitle.qml
 MediaIsland 1.0 MediaIsland.qml

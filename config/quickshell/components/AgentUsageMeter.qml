@@ -38,7 +38,7 @@ Item {
             height: parent.height
             radius: 2
             color: meter.accent
-            Behavior on width { NumberAnimation { duration: 420; easing.type: Easing.OutQuint } }
+            Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
         }
     }
 }

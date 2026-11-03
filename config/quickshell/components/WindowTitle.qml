@@ -7,6 +7,8 @@ import "."
 Island {
     visible: titleText.length > 0
     opacity: visible ? 1 : 0
+    color: F1Hub.surface
+    border.color: F1Hub.hairline
 
     readonly property string titleText: {
         const t = Hyprland.activeToplevel
@@ -19,7 +21,7 @@ Island {
         text: titleText
         font.family: Theme.fontFamily
         font.pixelSize: Theme.fontSize
-        color: Theme.subtle
+        color: F1Hub.ink2
         elide: Text.ElideRight
         maximumLineCount: 1
         Layout.maximumWidth: 320

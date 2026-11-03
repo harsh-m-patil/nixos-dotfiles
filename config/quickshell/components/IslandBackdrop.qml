@@ -1,8 +1,10 @@
 import QtQuick
 
+import "."
+
 // Full-screen dismiss layer behind the morphing shape. Clicks on the shape (including
 // expanded content) must not close — only taps on the dimmed area outside the island.
-Rectangle {
+Item {
     id: backdrop
 
     property bool active: false
@@ -10,7 +12,18 @@ Rectangle {
     signal dismissed()
 
     anchors.fill: parent
-    color: "transparent"
+
+    Rectangle {
+        anchors.fill: parent
+        color: "#000000"
+        opacity: backdrop.active ? 0.42 : 0
+        Behavior on opacity {
+            NumberAnimation {
+                duration: Motion.reduced ? 150 : 220
+                easing.type: Easing.OutCubic
+            }
+        }
+    }
 
     TapHandler {
         id: dismissTap

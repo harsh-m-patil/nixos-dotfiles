@@ -70,7 +70,7 @@ Item {
                         color: !on ? Theme.alpha(Theme.foreground, 0.07)
                             : bar.dimmed ? F1Hub.ink3
                             : (index + 1) / bar.segments > bar.warnAbove ? Theme.love : bar.accent
-                        Behavior on color { ColorAnimation { duration: 90 } }
+                        Behavior on color { enabled: !Motion.reduced; ColorAnimation { duration: 90 } }
                     }
                 }
             }

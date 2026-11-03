@@ -24,7 +24,7 @@ Item {
         color: root.primary ? F1Hub.ink
             : root.accent ? Theme.alpha(Theme.iris, 0.16)
             : hover.hovered && root.enabled ? F1Hub.fillStrong : "transparent"
-        scale: tap.pressed ? 0.9 : 1
+        scale: tap.pressed ? 0.94 : 1
         Behavior on color { ColorAnimation { duration: 120 } }
         Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutQuint } }
     }
@@ -35,7 +35,7 @@ Item {
         font.family: Theme.fontFamily
         font.pixelSize: root.iconSize
         color: root.primary ? F1Hub.surface : root.accent ? Theme.iris : hover.hovered ? F1Hub.ink : F1Hub.ink2
-        scale: tap.pressed ? 0.9 : 1
+        scale: tap.pressed ? 0.94 : 1
         Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutQuint } }
     }
 
