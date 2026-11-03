@@ -8,7 +8,10 @@ import "."
 ColumnLayout {
     id: peek
     signal openCalendar(date day)
-    spacing: 12
+    spacing: 8
+
+    readonly property int weekStripWidth: 7 * 34 + 6 * 4 + 12
+    implicitWidth: Math.max(weekStripWidth, headerRow.implicitWidth + 8)
 
     readonly property date now: ClockHub.now
     readonly property var today: ClockHub.sessionsOn(now.getFullYear(), now.getMonth(), now.getDate())
@@ -16,34 +19,33 @@ ColumnLayout {
     readonly property int daysInYear: new Date(now.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
 
     RowLayout {
+        id: headerRow
         Layout.fillWidth: true
-        Layout.leftMargin: 4
-        Layout.rightMargin: 4
-        spacing: 14
+        spacing: 10
 
         ColumnLayout {
             spacing: 0
             Row {
-                spacing: 2
-                F1Text { id: hm; text: Qt.formatTime(peek.now, "hh:mm"); role: "largeTitle"; numeric: true }
+                spacing: 1
+                F1Text { id: hm; text: Qt.formatTime(peek.now, "hh:mm"); role: "title"; numeric: true }
                 F1Text {
                     anchors.baseline: hm.baseline
                     text: Qt.formatTime(peek.now, ":ss")
-                    role: "title2"
+                    role: "footnote"
                     tone: "tertiary"
                     numeric: true
                 }
             }
-            F1Text { text: Qt.formatDate(peek.now, "dddd, d MMMM"); role: "callout"; tone: "secondary" }
+            F1Text { text: Qt.formatDate(peek.now, "ddd d MMM") + " · " + Qt.formatDate(peek.now, "dddd"); role: "footnote"; tone: "secondary" }
         }
         Item { Layout.fillWidth: true }
         ColumnLayout {
-            spacing: 2
-            F1Text { Layout.alignment: Qt.AlignRight; text: "Week " + ClockHub.isoWeek(peek.now); role: "headline" }
+            spacing: 0
+            F1Text { Layout.alignment: Qt.AlignRight; text: "Wk " + ClockHub.isoWeek(peek.now); role: "callout"; numeric: true; font.weight: Font.DemiBold }
             F1Text {
                 Layout.alignment: Qt.AlignRight
-                text: "Day " + ClockHub.dayOfYear(peek.now) + " of " + peek.daysInYear
-                role: "footnote"
+                text: "Day " + ClockHub.dayOfYear(peek.now) + "/" + peek.daysInYear
+                role: "caption"
                 tone: "tertiary"
                 numeric: true
             }
@@ -51,36 +53,42 @@ ColumnLayout {
     }
 
     F1Group {
+        Layout.preferredWidth: peek.weekStripWidth
         Layout.fillWidth: true
-        pad: 6
-        RowLayout {
+        pad: 4
+        GridLayout {
             Layout.fillWidth: true
-            spacing: 4
+            columns: 7
+            rowSpacing: 2
+            columnSpacing: 4
             Repeater {
                 model: 7
-                ColumnLayout {
+                F1Text {
+                    required property int index
+                    readonly property date day: {
+                        const s = ClockHub.weekStart(peek.now)
+                        return new Date(s.getFullYear(), s.getMonth(), s.getDate() + index)
+                    }
+                    Layout.preferredWidth: 34
+                    horizontalAlignment: Text.AlignHCenter
+                    text: Qt.formatDate(day, "ddd")
+                    role: "caption"
+                    tone: "tertiary"
+                }
+            }
+            Repeater {
+                model: 7
+                ClockDay {
                     id: col
                     required property int index
                     readonly property date day: {
                         const s = ClockHub.weekStart(peek.now)
                         return new Date(s.getFullYear(), s.getMonth(), s.getDate() + index)
                     }
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 1
-                    spacing: 2
-                    F1Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.topMargin: 4
-                        text: Qt.formatDate(col.day, "ddd")
-                        role: "caption"
-                        tone: "tertiary"
-                    }
-                    ClockDay {
-                        Layout.fillWidth: true
-                        implicitHeight: 38
-                        date: col.day
-                        onClicked: peek.openCalendar(col.day)
-                    }
+                    Layout.preferredWidth: 34
+                    implicitHeight: 30
+                    date: col.day
+                    onClicked: peek.openCalendar(col.day)
                 }
             }
         }

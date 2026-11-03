@@ -6,11 +6,36 @@ import Quickshell.Widgets
 
 import "."
 
-// The expanded status island: a Control Center of toggles, sliders, load charts,
+// The expanded status island: a Control Center laid out like an instrument cluster.
+// Dials for load, indicator lamps for radios, LED meters for levels, then telemetry,
 // outputs, display scale and tray. Keyboard: j/k rows, h/l within a row or adjust.
 ColumnLayout {
     id: panel
-    spacing: 14
+    spacing: 10
+
+    readonly property var netHistory: {
+        const rx = SystemData.netRxHistory, tx = SystemData.netTxHistory
+        const n = Math.min(rx.length, tx.length)
+        const out = []
+        for (let i = Math.max(0, n - 60); i < n; i++)
+            out.push((rx[i] ?? 0) + (tx[i] ?? 0))
+        return out
+    }
+    readonly property bool hasGpu: SystemData.gpuBusy > 0.005 || SystemData.gpuTemp > 0
+    readonly property var topCpu: SystemData.topBy("cpu", 4)
+    readonly property var chipNames: ({ k10temp: "CPU", coretemp: "CPU", amdgpu: "GPU", nvme: "NVMe", acpitz: "Board" })
+    readonly property var temps: {
+        const out = [], seen = {}
+        for (const s of SystemData.sensors) {
+            const name = chipNames[s[0]] ?? s[0]
+            if (s.length < 3 || !(Number(s[2]) > 0) || seen[name]) continue
+            seen[name] = true
+            out.push({ name: name, c: Number(s[2]) / 1000 })
+        }
+        const order = ["CPU", "GPU", "NVMe", "Board"]
+        const rank = n => order.includes(n) ? order.indexOf(n) : order.length
+        return out.sort((a, b) => rank(a.name) - rank(b.name)).slice(0, 5)
+    }
 
     property bool hints: false
     property int row: 0
@@ -21,6 +46,7 @@ ColumnLayout {
     readonly property var scales: ["1", "1.25", "1.5", "1.6", "1.75", "2"]
     readonly property int activeScale: display ? scales.findIndex(s => Math.abs(display.scale - Number(s)) < 0.01) : -1
     readonly property var layouts: [["Extend", "extend"], ["Mirror", "mirror"], ["External only", "secondary"]]
+    readonly property var profiles: [["ECO", "power-saver"], ["BAL", "balanced"], ["PERF", "performance"]]
 
     // Navigable rows, top to bottom.
     readonly property var rows: {
@@ -64,179 +90,484 @@ ColumnLayout {
         return true
     }
 
-    // Header
+    component HudLabel: Text {
+        color: F1Hub.ink3
+        font.family: Theme.fontFamily
+        font.pixelSize: 10
+        font.weight: Font.Bold
+        font.letterSpacing: 1.6
+    }
+    component HudSection: ColumnLayout {
+        property string title
+        property string detail
+        default property alias content: body.data
+        Layout.fillWidth: true
+        spacing: 6
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            HudLabel { text: parent.parent.title.toUpperCase() }
+            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: F1Hub.hairline }
+            HudLabel {
+                text: parent.parent.detail
+                visible: text !== ""
+                font.letterSpacing: 0.4
+                font.weight: Font.Medium
+                Layout.maximumWidth: 260
+                elide: Text.ElideRight
+            }
+        }
+        ColumnLayout { id: body; Layout.fillWidth: true; spacing: 4 }
+    }
+
+    // Header strip: host and uptime, power-profile "gear", monitor button
     RowLayout {
         Layout.fillWidth: true
         spacing: 10
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 1
-            F1Text { text: "Control Center"; role: "title2" }
-            F1Text {
-                text: [SystemData.info.host, SystemData.s.up ? "up " + Fmt.uptime(SystemData.s.up) : ""].filter(x => x).join(" · ")
-                role: "footnote"; tone: "secondary"; visible: text !== ""
+            spacing: 2
+            Text {
+                text: (SystemData.info.host || "Control Center").toUpperCase()
+                color: F1Hub.ink
+                font.family: Theme.fontFamily
+                font.pixelSize: 14
+                font.weight: Font.Bold
+                font.letterSpacing: 2.4
+            }
+            HudLabel {
+                text: [
+                    SystemData.s.up ? "UP " + Fmt.uptime(SystemData.s.up) : "",
+                    SystemData.s.procs ? SystemData.s.procs + " PROCS" : "",
+                    SystemData.s.governor ? String(SystemData.s.governor).toUpperCase() : ""
+                ].filter(x => x).join("  ·  ")
+                font.letterSpacing: 0.8
+                font.weight: Font.Medium
+                visible: text !== ""
+            }
+        }
+        Row {
+            spacing: 2
+            visible: !!SystemData.s.profile
+            Repeater {
+                model: panel.profiles
+                Rectangle {
+                    required property var modelData
+                    readonly property bool active: SystemData.s.profile === modelData[1]
+                    width: gear.implicitWidth + 14; height: 22; radius: 6
+                    color: active ? Theme.alpha(Theme.iris, 0.16) : "transparent"
+                    border.width: 1
+                    border.color: active ? Theme.alpha(Theme.iris, 0.5) : F1Hub.hairline
+                    HudLabel {
+                        id: gear
+                        anchors.centerIn: parent
+                        text: parent.modelData[0]
+                        color: parent.active ? Theme.iris : F1Hub.ink3
+                        font.letterSpacing: 1
+                    }
+                }
             }
         }
         Rectangle {
-            implicitWidth: monRow.implicitWidth + 24
-            implicitHeight: 30
-            radius: 15
+            implicitWidth: monText.implicitWidth + 20
+            implicitHeight: 26
+            radius: 8
             color: monHover.hovered ? F1Hub.fillStrong : F1Hub.fill
             border.width: 1
             border.color: F1Hub.hairline
-            Row {
-                id: monRow
-                anchors.centerIn: parent
-                spacing: 7
-                F1Text { anchors.verticalCenter: parent.verticalCenter; text: "System monitor"; role: "footnote"; font.weight: Font.DemiBold }
-            }
+            HudLabel { id: monText; anchors.centerIn: parent; text: "󰨇  MONITOR"; color: F1Hub.ink }
             HoverHandler { id: monHover; cursorShape: Qt.PointingHandCursor }
             TapHandler { onTapped: SystemData.windowOpen = true }
         }
     }
 
-    // Toggles
+    // Instrument cluster: CPU tach, centre readout, memory dial
+    Rectangle {
+        Layout.fillWidth: true
+        implicitHeight: 170
+        radius: 18
+        color: Theme.alpha(Theme.foreground, 0.03)
+        border.width: 1
+        border.color: F1Hub.hairline
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 8
+            spacing: 4
+
+            HudGauge {
+                Layout.preferredWidth: 170
+                Layout.fillHeight: true
+                label: "CPU"
+                value: SystemData.cpu
+                accent: Theme.iris
+                sub: [SystemData.temp > 0 ? Fmt.deg(SystemData.temp) : "",
+                      SystemData.freq[1] > 0 ? (SystemData.freq[1] / 1000).toFixed(1) + " GHz" : ""].filter(x => x).join("  ")
+            }
+
+            // Centre: network "speed", fuel and temperature meters
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.topMargin: 6
+                Layout.bottomMargin: 4
+                spacing: 4
+
+                HudLabel { Layout.alignment: Qt.AlignHCenter; text: "NET ↓" }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: Fmt.rate(Network.rxRate)
+                    color: F1Hub.ink
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 24
+                    font.weight: Font.Bold
+                    font.features: { "tnum": 1 }
+                }
+                HudLabel {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "↑ " + Fmt.rate(Network.txRate)
+                    color: F1Hub.ink2
+                    font.weight: Font.Medium
+                    font.letterSpacing: 0.4
+                }
+                Item { Layout.fillHeight: true }
+                HudBar {
+                    implicitHeight: 26
+                    interactive: false
+                    segments: 12
+                    icon: StatusData.hasBattery ? StatusData.batteryIcon : "󰚥"
+                    label: StatusData.charging ? "CHG" : "BAT"
+                    value: StatusData.hasBattery ? StatusData.batteryLevel : 1
+                    accent: StatusData.batteryLow ? Theme.love : StatusData.charging ? Theme.iris : Theme.gold
+                }
+                HudBar {
+                    implicitHeight: 26
+                    interactive: false
+                    segments: 12
+                    icon: "󰔏"
+                    label: "TMP"
+                    value: Math.min(1, (panel.hasGpu ? Math.max(SystemData.temp, SystemData.gpuTemp) : SystemData.temp) / 100)
+                    accent: Theme.iris
+                    warnAbove: 0.8
+                }
+            }
+
+            HudGauge {
+                Layout.preferredWidth: 170
+                Layout.fillHeight: true
+                label: "Memory"
+                value: SystemData.memFraction
+                redline: 0.9
+                accent: Theme.foam
+                sub: Fmt.gb(SystemData.memUsed) + (SystemData.swapUsed > 0 ? "  swap " + Fmt.gb(SystemData.swapUsed) : "")
+            }
+        }
+    }
+
+    // Indicator lamps
     RowLayout {
         Layout.fillWidth: true
-        spacing: 10
-        StatusTile {
-            icon: StatusData.wifiIcon; title: "Wi-Fi"; detail: StatusData.wifiDetail
+        spacing: 6
+        HudTelltale {
+            icon: StatusData.wifiIcon; label: "Wi-Fi"; detail: StatusData.wifiDetail
             on: StatusData.wifiOn
             selected: panel.current === "tiles" && panel.col === 0
             onActivated: StatusData.toggleWifi()
         }
-        StatusTile {
-            icon: StatusData.btOn ? "󰂯" : "󰂲"; title: "Bluetooth"; detail: StatusData.btDetail
+        HudTelltale {
+            icon: StatusData.btOn ? "󰂯" : "󰂲"; label: "Bluetooth"; detail: StatusData.btDetail
             on: StatusData.btOn
+            accent: Theme.iris
             selected: panel.current === "tiles" && panel.col === 1
             onActivated: StatusData.toggleBluetooth()
         }
-        StatusTile {
-            icon: StatusData.micMuted ? "󰍭" : "󰍬"; title: "Microphone"
+        HudTelltale {
+            icon: StatusData.micMuted ? "󰍭" : "󰍬"; label: "Mic"
             detail: !StatusData.hasMic ? "Unavailable" : StatusData.micMuted ? "Muted" : "Live"
             on: StatusData.hasMic && !StatusData.micMuted
             accent: Theme.love
             selected: panel.current === "tiles" && panel.col === 2
             onActivated: StatusData.toggleMic()
         }
-        StatusTile {
+        HudTelltale {
             icon: StatusData.hasBattery ? StatusData.batteryIcon : "󰚥"
-            title: StatusData.hasBattery ? Math.round(StatusData.batteryLevel * 100) + "%" : "AC power"
+            label: StatusData.hasBattery ? Math.round(StatusData.batteryLevel * 100) + "%" : "AC power"
             detail: StatusData.hasBattery ? StatusData.batteryDetail : "No battery"
             on: StatusData.charging || StatusData.batteryLow
-            accent: StatusData.batteryLow ? Theme.love : Theme.foam
+            accent: StatusData.batteryLow ? Theme.love : Theme.iris
             selected: panel.current === "tiles" && panel.col === 3
             onActivated: SystemData.windowOpen = true
         }
     }
 
-    // Sliders
-    StatusSlider {
-        icon: StatusData.volumeIcon
-        title: StatusData.muted ? "Muted" : "Volume"
-        value: StatusData.volume
-        dimmed: StatusData.muted
-        selected: panel.current === "volume"
-        onMoved: v => StatusData.setVolume(v)
-        onIconTapped: StatusData.toggleMute()
-    }
-    StatusSlider {
-        visible: StatusData.hasBacklight
-        icon: "󰃟"
-        title: "Brightness"
-        value: StatusData.brightness
-        selected: panel.current === "brightness"
-        onMoved: v => StatusData.setBrightness(v)
+    // Levels
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 6
+        HudBar {
+            icon: StatusData.volumeIcon
+            label: StatusData.muted ? "MUTE" : "VOL"
+            value: StatusData.volume
+            dimmed: StatusData.muted
+            warnAbove: 1
+            selected: panel.current === "volume"
+            onMoved: v => StatusData.setVolume(v)
+            onIconTapped: StatusData.toggleMute()
+        }
+        HudBar {
+            visible: StatusData.hasBacklight
+            icon: "󰃟"
+            label: "LCD"
+            value: StatusData.brightness
+            accent: Theme.gold
+            selected: panel.current === "brightness"
+            onMoved: v => StatusData.setBrightness(v)
+        }
     }
 
-    // Load
-    F1Group {
-        Layout.fillWidth: true
-        title: "Activity"
-        detail: SystemData.cpuModel
-        pad: 14
+    // Thermals and fans
+    HudSection {
+        visible: panel.temps.length > 0 || SystemData.fans.length > 0
+        title: "Thermals"
+        detail: SystemData.fans.length ? (SystemData.fans.some(f => f > 0) ? "FANS ACTIVE" : "FANS IDLE") : ""
         RowLayout {
             Layout.fillWidth: true
-            implicitHeight: 104
-            spacing: 22
-            StatusSpark {
-                Layout.fillHeight: true
-                label: "CPU"
-                value: Math.round(SystemData.cpu * 100) + "%"
-                sub: SystemData.temp > 0 ? Fmt.deg(SystemData.temp) : ""
-                history: SystemData.cpuHistory
-                accent: SystemData.cpu > 0.85 ? Theme.love : Theme.iris
+            spacing: 6
+            Repeater {
+                model: panel.temps
+                Rectangle {
+                    required property var modelData
+                    readonly property real frac: Math.min(1, modelData.c / 100)
+                    readonly property color tone: modelData.c >= 85 ? Theme.love : modelData.c >= 70 ? Theme.gold : Theme.iris
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    implicitHeight: 48
+                    radius: 10
+                    color: "transparent"
+                    border.width: 1
+                    border.color: F1Hub.hairline
+                    Rectangle {
+                        anchors { left: parent.left; bottom: parent.bottom; margins: 6 }
+                        width: 3; radius: 1.5
+                        height: (parent.height - 12) * parent.frac
+                        color: parent.tone
+                        Behavior on height { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
+                    }
+                    Column {
+                        anchors { left: parent.left; leftMargin: 15; verticalCenter: parent.verticalCenter }
+                        spacing: 1
+                        HudLabel { text: parent.parent.modelData.name.toUpperCase() }
+                        Text {
+                            text: Math.round(parent.parent.modelData.c) + "°"
+                            color: parent.parent.tone
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 16
+                            font.weight: Font.Bold
+                            font.features: { "tnum": 1 }
+                        }
+                    }
+                }
             }
-            StatusSpark {
-                Layout.fillHeight: true
-                label: "Memory"
-                value: Math.round(SystemData.memFraction * 100) + "%"
-                sub: Fmt.gb(SystemData.memUsed) + " of " + Fmt.gb(SystemData.memTotal)
-                history: SystemData.memHistory
-                accent: SystemData.memFraction > 0.9 ? Theme.love : Theme.foam
+            Repeater {
+                model: SystemData.fans
+                Rectangle {
+                    required property var modelData
+                    required property int index
+                    readonly property bool spinning: modelData > 0
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    implicitHeight: 48
+                    radius: 10
+                    color: spinning ? Theme.alpha(Theme.iris, 0.08) : "transparent"
+                    border.width: 1
+                    border.color: spinning ? Theme.alpha(Theme.iris, 0.35) : F1Hub.hairline
+                    Text {
+                        id: blade
+                        anchors { left: parent.left; leftMargin: 9; verticalCenter: parent.verticalCenter }
+                        text: "󰈐"
+                        color: parent.spinning ? Theme.iris : F1Hub.ink3
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 20
+                        RotationAnimator on rotation {
+                            from: 0; to: 360; loops: Animation.Infinite
+                            duration: Math.max(250, 600000 / Math.max(1, blade.parent.modelData))
+                            running: blade.parent.spinning && blade.visible
+                        }
+                    }
+                    Column {
+                        anchors { left: blade.right; leftMargin: 7; verticalCenter: parent.verticalCenter }
+                        spacing: 1
+                        HudLabel { text: "FAN " + (parent.parent.index + 1) }
+                        Row {
+                            spacing: 2
+                            Text {
+                                text: parent.parent.parent.spinning ? parent.parent.parent.modelData : "OFF"
+                                color: parent.parent.parent.spinning ? F1Hub.ink : F1Hub.ink3
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 16
+                                font.weight: Font.Bold
+                                font.features: { "tnum": 1 }
+                            }
+                            HudLabel {
+                                anchors.baseline: parent.children[0].baseline
+                                visible: parent.parent.parent.spinning
+                                text: "RPM"
+                                font.letterSpacing: 0.6
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
-    // Outputs and display
+    // Telemetry
+    HudSection {
+        title: "Telemetry"
+        detail: SystemData.load.length ? "LOAD " + SystemData.load.map(l => l.toFixed(2)).join(" ") : ""
+        GridLayout {
+            Layout.fillWidth: true
+            columns: panel.hasGpu ? 4 : 3
+            columnSpacing: 12
+            StatusSpark {
+                compact: true
+                visible: panel.hasGpu
+                Layout.preferredHeight: 46
+                label: "GPU"
+                value: Math.round(SystemData.gpuBusy * 100) + "%"
+                history: SystemData.gpuHistory
+                accent: Theme.gold
+            }
+            StatusSpark {
+                compact: true
+                Layout.preferredHeight: 46
+                label: "NET"
+                value: Fmt.rate(SystemData.netRx + SystemData.netTx)
+                history: panel.netHistory.length > 1 ? panel.netHistory : Network.history
+                autoscale: true
+                accent: Theme.iris
+            }
+            StatusSpark {
+                compact: true
+                Layout.preferredHeight: 46
+                label: "READ"
+                value: Fmt.rate(SystemData.diskRead)
+                history: SystemData.diskReadHistory
+                autoscale: true
+                accent: Theme.foam
+            }
+            StatusSpark {
+                compact: true
+                Layout.preferredHeight: 46
+                label: "WRITE"
+                value: Fmt.rate(SystemData.diskWrite)
+                history: SystemData.diskWriteHistory
+                autoscale: true
+                accent: Theme.rose
+            }
+        }
+    }
+
+    // Processes beside outputs and display
     RowLayout {
         Layout.fillWidth: true
         spacing: 14
 
-        F1Group {
-            Layout.fillWidth: true
+        HudSection {
             Layout.preferredWidth: 1
             Layout.alignment: Qt.AlignTop
-            title: "Sound output"
-            pad: 4
+            visible: panel.topCpu.length > 0
+            title: "Top"
+            detail: SystemData.diskFraction > 0 ? "DISK " + Math.round(SystemData.diskFraction * 100) + "%" : ""
             Repeater {
-                model: StatusData.sinks
-                Rectangle {
+                model: panel.topCpu
+                delegate: RowLayout {
                     required property var modelData
-                    required property int index
-                    readonly property bool active: modelData.id === StatusData.sink?.id
-                    readonly property bool sel: panel.current === "sink" + index
                     Layout.fillWidth: true
-                    implicitHeight: 32
-                    radius: 10
-                    color: sel ? Theme.alpha(Theme.iris, 0.16) : sinkHover.hovered ? F1Hub.fill : "transparent"
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 10
-                        spacing: 8
-                        F1Text {
-                            text: parent.parent.modelData.description || parent.parent.modelData.name
-                            role: "callout"
-                            font.weight: parent.parent.active ? Font.DemiBold : Font.Normal
-                            tone: parent.parent.active ? "primary" : "secondary"
-                            Layout.fillWidth: true
-                        }
-                        Text {
-                            visible: parent.parent.active
-                            text: "󰄬"
+                    implicitHeight: 22
+                    spacing: 8
+                    Text {
+                        text: modelData.name
+                        color: F1Hub.ink
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 12
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+                    Rectangle {
+                        Layout.preferredWidth: 40
+                        implicitHeight: 4
+                        radius: 2
+                        color: Theme.alpha(Theme.foreground, 0.07)
+                        Rectangle {
+                            width: parent.width * Math.min(1, modelData.cpu)
+                            height: parent.height
+                            radius: 2
                             color: Theme.iris
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 13
                         }
                     }
-                    HoverHandler { id: sinkHover; cursorShape: Qt.PointingHandCursor }
-                    TapHandler { onTapped: StatusData.useSink(parent.modelData) }
+                    Text {
+                        text: Math.round(modelData.cpu * 100) + "%"
+                        color: F1Hub.ink2
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                        font.features: { "tnum": 1 }
+                        horizontalAlignment: Text.AlignRight
+                        Layout.preferredWidth: 30
+                    }
                 }
             }
         }
 
-        F1Group {
-            visible: !!panel.display
+        ColumnLayout {
             Layout.fillWidth: true
             Layout.preferredWidth: 1
             Layout.alignment: Qt.AlignTop
-            title: "Display"
-            detail: panel.display ? panel.display.name + " · " + panel.display.refreshRate.toFixed(0) + " Hz" : ""
-            pad: 10
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 8
+            spacing: 10
+
+            HudSection {
+                title: "Audio out"
+                Repeater {
+                    model: StatusData.sinks
+                    Rectangle {
+                        required property var modelData
+                        required property int index
+                        readonly property bool active: modelData.id === StatusData.sink?.id
+                        readonly property bool sel: panel.current === "sink" + index
+                        Layout.fillWidth: true
+                        implicitHeight: 26
+                        radius: 7
+                        color: active ? Theme.alpha(Theme.iris, 0.1) : sinkHover.hovered ? F1Hub.fill : "transparent"
+                        border.width: 1
+                        border.color: sel ? Theme.alpha(Theme.foreground, 0.6) : "transparent"
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            spacing: 8
+                            Rectangle {
+                                implicitWidth: 6; implicitHeight: 6; radius: 3
+                                color: parent.parent.active ? Theme.iris : F1Hub.fillStrong
+                            }
+                            Text {
+                                text: parent.parent.modelData.description || parent.parent.modelData.name
+                                color: parent.parent.active ? F1Hub.ink : F1Hub.ink2
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 11
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                        }
+                        HoverHandler { id: sinkHover; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { onTapped: StatusData.useSink(parent.modelData) }
+                    }
+                }
+            }
+
+            HudSection {
+                visible: !!panel.display
+                title: "Display"
+                detail: panel.display ? panel.display.name + " · " + panel.display.refreshRate.toFixed(0) + " Hz" : ""
                 F1Segmented {
                     Layout.fillWidth: true
                     visible: MonitorData.monitors.length > 1
@@ -246,7 +577,7 @@ ColumnLayout {
                 }
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 4
+                    spacing: 3
                     Repeater {
                         model: panel.scales
                         Rectangle {
@@ -255,16 +586,18 @@ ColumnLayout {
                             readonly property bool active: index === panel.activeScale
                             readonly property bool sel: panel.current === "scale" && index === panel.scaleCol
                             Layout.fillWidth: true
-                            implicitHeight: 28
-                            radius: 8
-                            color: active ? F1Hub.fillStrong : scaleHover.hovered ? F1Hub.fill : "transparent"
+                            implicitHeight: 24
+                            radius: 6
+                            color: active ? Theme.alpha(Theme.iris, 0.16) : scaleHover.hovered ? F1Hub.fill : "transparent"
                             border.width: 1
-                            border.color: sel ? Theme.alpha(Theme.iris, 0.7) : active ? F1Hub.fillStrong : "transparent"
-                            F1Text {
+                            border.color: sel ? Theme.alpha(Theme.foreground, 0.6) : active ? Theme.alpha(Theme.iris, 0.5) : F1Hub.hairline
+                            Text {
                                 anchors.centerIn: parent
                                 text: parent.modelData + "×"
-                                role: "caption"; numeric: true
-                                tone: parent.active ? "primary" : "secondary"
+                                color: parent.active ? Theme.iris : F1Hub.ink2
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 10
+                                font.weight: Font.Bold
                             }
                             HoverHandler { id: scaleHover; cursorShape: Qt.PointingHandCursor }
                             TapHandler { enabled: !MonitorData.busy; onTapped: MonitorData.setScale(panel.display, parent.modelData) }
@@ -276,11 +609,9 @@ ColumnLayout {
     }
 
     // Tray
-    F1Group {
+    HudSection {
         visible: SystemTray.items.values.length > 0
-        Layout.fillWidth: true
-        title: "Menu bar apps"
-        pad: 6
+        title: "Apps"
         Flow {
             Layout.fillWidth: true
             spacing: 4
@@ -290,10 +621,12 @@ ColumnLayout {
                     id: trayItem
                     required property var modelData
                     required property int index
-                    width: 36; height: 36; radius: 10
+                    width: 32; height: 32; radius: 8
                     color: panel.current === "tray" && panel.col === index ? Theme.alpha(Theme.iris, 0.16)
                         : trayArea.containsMouse ? F1Hub.fillStrong : "transparent"
-                    IconImage { anchors.centerIn: parent; implicitSize: 18; source: trayItem.modelData.icon }
+                    border.width: 1
+                    border.color: panel.current === "tray" && panel.col === index ? Theme.alpha(Theme.foreground, 0.6) : F1Hub.hairline
+                    IconImage { anchors.centerIn: parent; implicitSize: 16; source: trayItem.modelData.icon }
                     MouseArea {
                         id: trayArea
                         anchors.fill: parent
@@ -319,7 +652,7 @@ ColumnLayout {
     F1Keys {
         Layout.alignment: Qt.AlignHCenter
         hints: panel.hints
-            ? [["j k", "Row"], ["h l", "Move or adjust"], ["↵", "Toggle"], ["1–4", "Tiles"], ["m", "Mute"], ["esc", "Close"]]
+            ? [["j k", "Row"], ["h l", "Move or adjust"], ["↵", "Toggle"], ["1–4", "Lamps"], ["m", "Mute"], ["esc", "Close"]]
             : [["?", "Keyboard shortcuts"]]
     }
 }

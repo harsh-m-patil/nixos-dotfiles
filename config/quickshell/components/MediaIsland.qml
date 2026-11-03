@@ -55,17 +55,32 @@ Item {
         WlrLayershell.keyboardFocus: root.full ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         anchors { top: true; bottom: true; left: true; right: true }
-        mask: Region { item: root.full ? backdrop : shape }
+        IslandClickMask {
+            id: clickMask
+            panel: win
+            fullScreen: root.full
+            shape: shape
+        }
+        mask: clickMask
+
+        Connections {
+            target: shape
+            function onXChanged() { clickMask.changed() }
+            function onYChanged() { clickMask.changed() }
+            function onWidthChanged() { clickMask.changed() }
+            function onHeightChanged() { clickMask.changed() }
+            function onRadiusChanged() { clickMask.changed() }
+        }
 
         readonly property size peekSize: Qt.size(560, peek.implicitHeight + 40)
         readonly property size fullSize: Qt.size(Math.min(width - 16, 780),
             Math.min(height - 48, 680, (expandedLoader.item?.implicitHeight ?? 340) + 42))
 
-        Rectangle {
+        IslandBackdrop {
             id: backdrop
-            anchors.fill: parent
-            color: "transparent"
-            TapHandler { onTapped: Media.open = false }
+            active: root.full
+            shape: shape
+            onDismissed: Media.open = false
         }
 
         Item {
@@ -92,6 +107,7 @@ Item {
 
         Rectangle {
             id: shape
+            z: root.full ? 100 : 0
             readonly property real cx: root.origin.x + root.width / 2
             readonly property real tw: root.state_ === "full" ? win.fullSize.width : root.state_ === "peek" ? win.peekSize.width : root.width
             readonly property real th: root.state_ === "full" ? win.fullSize.height : root.state_ === "peek" ? win.peekSize.height : 28
@@ -133,7 +149,8 @@ Item {
                 x: (shape.width - width) / 2
                 height: 28
                 spacing: 8
-                opacity: root.state_ === "compact" ? 1 : 0
+                visible: root.state_ === "compact"
+                opacity: visible ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 140 } }
 
                 MediaArt { Layout.preferredWidth: 20; Layout.preferredHeight: 20; radius: 6 }
@@ -149,6 +166,7 @@ Item {
 
             MediaCard {
                 id: peek
+                z: 2
                 x: (shape.width - width) / 2
                 y: 20
                 width: win.peekSize.width - 44
@@ -163,6 +181,7 @@ Item {
             // Built on first open, then kept warm.
             Loader {
                 id: expandedLoader
+                z: root.full ? 0 : -1
                 x: (shape.width - width) / 2
                 y: 22
                 width: win.fullSize.width - 44

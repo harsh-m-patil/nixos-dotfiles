@@ -13,26 +13,51 @@ ColumnLayout {
     property color accent: Theme.iris
     property bool selected: false
 
+    property bool compact: false
+    property bool autoscale: false
+    readonly property var series: {
+        const pts = history.slice(-60)
+        if (!autoscale || pts.length < 2)
+            return pts
+        let max = 1e-6
+        for (let i = 0; i < pts.length; i++)
+            max = Math.max(max, pts[i])
+        return pts.map(v => v / max)
+    }
+
     Layout.fillWidth: true
     Layout.preferredWidth: 1
-    spacing: 6
+    spacing: compact ? 3 : 6
 
     RowLayout {
         Layout.fillWidth: true
-        F1Text { text: spark.label; role: "footnote"; tone: "secondary"; Layout.fillWidth: true }
+        F1Text { text: spark.label; role: "footnote"; tone: "secondary"; Layout.fillWidth: !spark.compact }
+        F1Text {
+            visible: spark.compact
+            text: spark.value
+            role: "callout"
+            numeric: true
+            font.weight: Font.DemiBold
+            color: spark.accent
+        }
         F1Text { text: spark.sub; role: "caption"; tone: "tertiary"; numeric: true; visible: text !== "" }
     }
-    F1Text { text: spark.value; role: "title2"; numeric: true }
+    F1Text {
+        visible: !spark.compact
+        text: spark.value
+        role: "title2"
+        numeric: true
+    }
 
     Canvas {
         id: canvas
         Layout.fillWidth: true
         Layout.fillHeight: true
-        Layout.minimumHeight: 44
+        Layout.minimumHeight: compact ? 28 : 44
         onPaint: {
             const ctx = getContext("2d")
             ctx.reset()
-            const h = spark.history, n = 60
+            const h = spark.series, n = 60
             if (h.length < 2) return
             const pts = h.slice(-n)
             const step = width / (n - 1)
@@ -54,6 +79,7 @@ ColumnLayout {
         Connections {
             target: spark
             function onHistoryChanged() { canvas.requestPaint() }
+            function onSeriesChanged() { canvas.requestPaint() }
             function onAccentChanged() { canvas.requestPaint() }
         }
         onWidthChanged: requestPaint()

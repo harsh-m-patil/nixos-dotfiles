@@ -59,6 +59,7 @@ Singleton {
     readonly property real nvmeTemp: num(s.nvmetemp) / 1000
     readonly property real gpuBusy: num(s.gpubusy) / 100
     readonly property var sensors: list(s.sensors)
+    readonly property var fans: (s.fans ?? "").split(" ").filter(x => x !== "").map(Number)
     readonly property real batFraction: batFull[0] > 0 ? Math.min(1, num(s.batnow) / batFull[0]) : 0
     readonly property real batHealth: batFull[1] > 0 ? batFull[0] / batFull[1] : 0
     readonly property bool charging: s.batstatus === "Charging"
@@ -109,6 +110,7 @@ Singleton {
             "grep '^cpu' /proc/stat | awk '{printf \"%s=%s %s %s %s %s %s %s\\n\", $1,$2,$3,$4,$5,$6,$7,$8}'; " +
             "awk '/^(MemTotal|MemAvailable|SwapTotal|SwapFree|Cached|Buffers):/{gsub(\":\",\"\"); print $1\"=\"$2}' /proc/meminfo; " +
             "echo temp=$(hw k10temp temp1_input); echo nvmetemp=$(hw nvme temp1_input); echo fan=$(hw hp fan1_input); " +
+            "echo fans=$(cat /sys/class/hwmon/hwmon*/fan*_input 2>/dev/null); " +
             "echo gputemp=$(hw amdgpu temp1_input); echo gpupower=$(hw amdgpu power1_input); " +
             "g=$(ls -d /sys/class/drm/card*/device | head -1); " +
             "echo gpubusy=$(cat $g/gpu_busy_percent 2>/dev/null); " +

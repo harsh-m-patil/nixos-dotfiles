@@ -7,7 +7,7 @@ import "."
 // Keyboard: h/l day, j/k week, [ ] month, t today, Enter jumps to the next race, Esc/q close.
 ColumnLayout {
     id: cal
-    spacing: 14
+    spacing: 10
 
     readonly property date sel: ClockHub.selected
     readonly property int year: ClockHub.year
@@ -41,8 +41,8 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         spacing: 10
-        F1Text { text: ClockHub.monthNames[cal.month]; role: "title" }
-        F1Text { text: cal.year; role: "title"; tone: "tertiary"; numeric: true; Layout.fillWidth: true }
+        F1Text { text: ClockHub.monthNames[cal.month]; role: "title2" }
+        F1Text { text: cal.year; role: "title2"; tone: "tertiary"; numeric: true; Layout.fillWidth: true }
         ClockButton { text: "‹"; onClicked: ClockHub.moveMonths(-1) }
         ClockButton { text: "Today"; hint: "T"; opacity: cal.viewingToday ? 0.5 : 1; onClicked: ClockHub.today() }
         ClockButton { text: "›"; onClicked: ClockHub.moveMonths(1) }
@@ -51,12 +51,12 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        spacing: 22
+        spacing: 14
 
         F1Group {
-            Layout.preferredWidth: 7 * 52 + 6 * 4 + 16
+            Layout.preferredWidth: 7 * 38 + 6 * 4 + 12
             Layout.fillHeight: true
-            pad: 8
+            pad: 6
 
             WheelHandler { onWheel: e => ClockHub.moveMonths(e.angleDelta.y > 0 ? -1 : 1) }
 
@@ -88,7 +88,7 @@ ColumnLayout {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         Layout.preferredWidth: 1
-                        implicitHeight: 44
+                        implicitHeight: 36
                         large: true
                         date: new Date(cal.gridStart.getFullYear(), cal.gridStart.getMonth(), cal.gridStart.getDate() + index)
                         inMonth: date.getMonth() === cal.month
@@ -102,8 +102,8 @@ ColumnLayout {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.preferredWidth: 300
-            spacing: 14
+            Layout.preferredWidth: 248
+            spacing: 10
 
             ColumnLayout {
                 Layout.leftMargin: 4

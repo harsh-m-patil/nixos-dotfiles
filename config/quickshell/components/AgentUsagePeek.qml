@@ -3,90 +3,106 @@ import QtQuick.Layouts
 
 import "."
 
-// Peek: today's spend and the subscription limits at a glance.
+// Peek — a trip computer: today's and the cycle's spend on odometers, limits as fuel gauges.
 ColumnLayout {
     id: peek
     signal openRequested()
-    spacing: 14
+    spacing: 10
 
     readonly property var d: AgentUsageData
+    readonly property var tanks: {
+        const t = d.limits.slice(0, 3).map(l => ({ label: l.label.replace(/ models?$/i, ""), left: l.left / 100, sub: d.resetsIn(l.resetsAt).replace("resets in ", "") }))
+        if (d.spend) t.push({ label: "Spend", left: Math.max(0, 1 - d.spend.used / d.spend.limit), readout: Fmt.usd(d.spend.used), sub: "of " + Fmt.usd(d.spend.limit) })
+        return t
+    }
 
     RowLayout {
         Layout.fillWidth: true
         spacing: 14
-        AgentUsageRing {
-            implicitWidth: 40; implicitHeight: 40; stroke: 4
-            value: peek.d.tightest ? peek.d.tightest.used / 100 : 0
-            accent: peek.d.accent
+        HudOdometer {
+            label: "Trip · today"
+            text: peek.d.ready ? Fmt.usd(peek.d.today.cost) : "$-.--"
+            sub: Fmt.tokens(peek.d.today.tokens) + " tokens"
         }
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 2
-            F1Text { text: "Agent usage"; role: "headline" }
-            F1Text {
-                Layout.fillWidth: true
-                text: peek.d.error !== "" ? peek.d.error
-                    : !peek.d.ready ? "Scanning local agent history…"
-                    : Fmt.tokens(peek.d.today.tokens) + " tokens today · " + peek.d.cycle.sessions + " sessions this cycle"
-                role: "footnote"
-                tone: peek.d.error !== "" ? "primary" : "secondary"
-                color: peek.d.error !== "" ? Theme.gold : F1Hub.ink2
-            }
-        }
-        ColumnLayout {
-            spacing: 0
-            F1Text { Layout.alignment: Qt.AlignRight; text: Fmt.usd(peek.d.today.cost); role: "title"; numeric: true }
-            F1Text { Layout.alignment: Qt.AlignRight; text: "spent today"; role: "caption"; tone: "tertiary" }
+        Item { Layout.fillWidth: true }
+        HudOdometer {
+            label: "Odo · cycle"
+            accent: F1Hub.ink2
+            cell: 13
+            text: peek.d.ready ? Fmt.usd(peek.d.cycle.cost) : "$-.--"
+            sub: peek.d.cycle.sessions + " sessions"
         }
     }
 
-    F1Group {
+    Text {
+        visible: peek.d.error !== "" || !peek.d.ready
         Layout.fillWidth: true
-        visible: peek.d.limits.length > 0 || peek.d.spend !== null
-        title: "Limits"
-        detail: peek.d.tightest ? peek.d.resetsIn(peek.d.tightest.resetsAt) : ""
-        pad: 14
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 12
-            Repeater {
-                model: peek.d.limits
-                AgentUsageMeter {
-                    required property var modelData
-                    label: modelData.label
-                    value: modelData.left + "% left"
-                    fraction: modelData.used / 100
-                    accent: modelData.left <= 15 ? Theme.love : modelData.left <= 35 ? Theme.gold : Theme.iris
-                }
-            }
-            AgentUsageMeter {
-                visible: peek.d.spend !== null
-                label: "Included spend"
-                value: peek.d.spend ? Fmt.usd(peek.d.spend.used) + " of " + Fmt.usd(peek.d.spend.limit) : ""
-                fraction: peek.d.spend ? peek.d.spend.used / peek.d.spend.limit : 0
-                accent: peek.d.spend && peek.d.spend.used >= peek.d.spend.limit ? Theme.love : Theme.foam
-            }
-        }
+        text: peek.d.error !== "" ? peek.d.error : "Scanning local agent history…"
+        color: peek.d.error !== "" ? Theme.gold : F1Hub.ink3
+        font.family: Theme.fontFamily
+        font.pixelSize: 10
+        elide: Text.ElideRight
     }
 
     Rectangle {
-        Layout.alignment: Qt.AlignHCenter
-        implicitWidth: openRow.implicitWidth + 28
-        implicitHeight: 32
-        radius: 16
-        color: openHover.hovered ? F1Hub.fillStrong : F1Hub.fill
+        Layout.fillWidth: true
+        visible: peek.tanks.length > 0
+        implicitHeight: 112
+        Layout.preferredWidth: Math.max(340, peek.tanks.length * 92)
+        radius: 14
+        color: Theme.alpha(Theme.foreground, 0.03)
         border.width: 1
         border.color: F1Hub.hairline
-        scale: openTap.pressed ? 0.96 : 1
-        Behavior on color { ColorAnimation { duration: 120 } }
-        Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutQuint } }
-        Row {
-            id: openRow
-            anchors.centerIn: parent
-            F1Text { text: "Open Agent usage"; role: "footnote"; font.weight: Font.DemiBold }
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 4
+            spacing: 0
+            Repeater {
+                model: peek.tanks
+                HudFuel {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    label: modelData.label
+                    value: modelData.left
+                    readout: modelData.readout ?? Math.round(modelData.left * 100) + "%"
+                    sub: modelData.sub
+                }
+            }
         }
-        HoverHandler { id: openHover; cursorShape: Qt.PointingHandCursor }
-        TapHandler { id: openTap; onTapped: peek.openRequested() }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        visible: peek.d.models.length > 0
+        spacing: 6
+        Text {
+            text: "LEAD"
+            color: F1Hub.ink3
+            font.family: Theme.fontFamily
+            font.pixelSize: 9
+            font.weight: Font.Bold
+            font.letterSpacing: 1.6
+        }
+        Text {
+            Layout.fillWidth: true
+            text: peek.d.models[0]?.name ?? ""
+            color: F1Hub.ink
+            font.family: Theme.fontFamily
+            font.pixelSize: 11
+            elide: Text.ElideRight
+        }
+        Text {
+            text: peek.d.models[0] ? Fmt.pct(peek.d.models[0].share, 0) + " of spend" : ""
+            color: F1Hub.ink2
+            font.family: Theme.fontFamily
+            font.pixelSize: 10
+        }
+    }
+
+    ClockButton {
+        Layout.alignment: Qt.AlignHCenter
+        text: "Open Agent usage"
+        onClicked: peek.openRequested()
     }
 }

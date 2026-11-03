@@ -3,102 +3,112 @@ import QtQuick.Layouts
 
 import "."
 
-// The status peek: connection line on top, four level meters, and the way into Control Center.
+// Status peek — a mini instrument cluster: CPU and memory dials around a link readout,
+// indicator lamps, then battery and volume meters and the open pill.
 ColumnLayout {
     id: peek
-    spacing: 12
+    spacing: 8
     signal openRequested()
 
-    component Meter: ColumnLayout {
-        property string icon
-        property string label
-        property real level: 0
-        property string value
-        property color accent: F1Hub.ink
-        Layout.fillWidth: true
-        Layout.preferredWidth: 1
-        Layout.margins: 12
-        spacing: 6
-        RowLayout {
-            spacing: 6
-            Text { text: parent.parent.icon; color: F1Hub.ink2; font.family: Theme.fontFamily; font.pixelSize: 13 }
-            F1Text { text: parent.parent.label; role: "footnote"; tone: "secondary"; Layout.fillWidth: true }
-        }
-        F1Text { text: parent.value; role: "title2"; numeric: true; color: parent.accent }
-        Rectangle {
-            Layout.fillWidth: true
-            implicitHeight: 4
-            radius: 2
-            color: F1Hub.fillStrong
-            Rectangle {
-                width: parent.width * Math.max(0, Math.min(1, parent.parent.level))
-                height: parent.height
-                radius: 2
-                color: parent.parent.accent
-                Behavior on width { NumberAnimation { duration: 420; easing.type: Easing.OutQuint } }
-            }
-        }
+    implicitWidth: 340
+
+    component Lamp: Text {
+        property bool on: false
+        property color accent: Theme.iris
+        color: on ? accent : F1Hub.ink3
+        font.family: Theme.fontFamily
+        font.pixelSize: 14
     }
 
     RowLayout {
         Layout.fillWidth: true
-        spacing: 10
-        Text { text: StatusData.wifiIcon; color: F1Hub.ink; font.family: Theme.fontFamily; font.pixelSize: 16 }
-        F1Text { text: StatusData.wifiDetail; role: "headline" }
-        F1Text {
-            visible: Network.connected
-            text: "↓ " + Fmt.rate(Network.rxRate) + "  ↑ " + Fmt.rate(Network.txRate)
-            role: "footnote"; tone: "tertiary"; numeric: true
-        }
-        Item { Layout.fillWidth: true }
-        F1Text { text: StatusData.outputName; role: "footnote"; tone: "secondary"; Layout.maximumWidth: 220 }
-    }
+        spacing: 0
 
-    F1Group {
-        Layout.fillWidth: true
-        RowLayout {
+        HudGauge {
+            Layout.preferredWidth: 112
+            Layout.preferredHeight: 100
+            label: "CPU"
+            value: SystemData.cpu
+            accent: Theme.iris
+            sub: SystemData.temp > 0 ? Fmt.deg(SystemData.temp) : ""
+        }
+
+        ColumnLayout {
             Layout.fillWidth: true
-            spacing: 0
-            Meter {
-                visible: StatusData.hasBattery
-                icon: StatusData.batteryIcon; label: StatusData.charging ? "Charging" : "Battery"
-                level: StatusData.batteryLevel
-                value: Math.round(StatusData.batteryLevel * 100) + "%"
-                accent: StatusData.batteryLow ? Theme.love : StatusData.charging ? Theme.foam : F1Hub.ink
+            spacing: 3
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: "NET ↓"
+                color: F1Hub.ink3
+                font.family: Theme.fontFamily
+                font.pixelSize: 9
+                font.weight: Font.Bold
+                font.letterSpacing: 1.6
             }
-            Meter {
-                icon: StatusData.volumeIcon; label: StatusData.muted ? "Muted" : "Volume"
-                level: StatusData.muted ? 0 : StatusData.volume
-                value: StatusData.muted ? "Off" : Math.round(StatusData.volume * 100) + "%"
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: Fmt.rate(Network.rxRate)
+                color: F1Hub.ink
+                font.family: Theme.fontFamily
+                font.pixelSize: 16
+                font.weight: Font.Bold
+                font.features: { "tnum": 1 }
             }
-            Meter {
-                icon: "󰍛"; label: "CPU"
-                level: SystemData.cpu
-                value: Math.round(SystemData.cpu * 100) + "%"
-                accent: SystemData.cpu > 0.85 ? Theme.love : F1Hub.ink
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.maximumWidth: 110
+                text: StatusData.wifiDetail
+                color: F1Hub.ink2
+                font.family: Theme.fontFamily
+                font.pixelSize: 10
+                elide: Text.ElideRight
             }
-            Meter {
-                icon: "󰘚"; label: "Memory"
-                level: SystemData.memFraction
-                value: Math.round(SystemData.memFraction * 100) + "%"
-                accent: SystemData.memFraction > 0.9 ? Theme.love : F1Hub.ink
+            Row {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.topMargin: 4
+                spacing: 9
+                Lamp { text: StatusData.wifiIcon; on: StatusData.wifiConnected }
+                Lamp { text: StatusData.btOn ? "󰂯" : "󰂲"; on: StatusData.btConnected.length > 0 }
+                Lamp { text: StatusData.micMuted ? "󰍭" : "󰍬"; on: StatusData.hasMic; accent: StatusData.micMuted ? Theme.love : Theme.iris }
+                Lamp { text: "󰈐"; on: SystemData.fans.some(f => f > 0); visible: SystemData.fans.length > 0 }
             }
+        }
+
+        HudGauge {
+            Layout.preferredWidth: 112
+            Layout.preferredHeight: 100
+            label: "MEM"
+            value: SystemData.memFraction
+            redline: 0.9
+            accent: Theme.foam
+            sub: Fmt.gb(SystemData.memUsed)
         }
     }
 
-    Rectangle {
+    HudBar {
+        visible: StatusData.hasBattery
+        implicitHeight: 30
+        segments: 16
+        interactive: false
+        icon: StatusData.batteryIcon
+        label: StatusData.charging ? "CHG" : "BAT"
+        value: StatusData.batteryLevel
+        accent: StatusData.batteryLow ? Theme.love : Theme.iris
+    }
+    HudBar {
+        implicitHeight: 30
+        segments: 16
+        icon: StatusData.volumeIcon
+        label: StatusData.muted ? "MUTE" : "VOL"
+        value: StatusData.volume
+        dimmed: StatusData.muted
+        onMoved: v => StatusData.setVolume(v)
+        onIconTapped: StatusData.toggleMute()
+    }
+
+    ClockButton {
         Layout.alignment: Qt.AlignHCenter
-        implicitWidth: openRow.implicitWidth + 28
-        implicitHeight: 32
-        radius: 16
-        color: openHover.hovered ? F1Hub.fillStrong : F1Hub.fill
-        border.width: 1
-        border.color: F1Hub.hairline
-        scale: openTap.pressed ? 0.96 : 1
-        Behavior on color { ColorAnimation { duration: 120 } }
-        Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutQuint } }
-        F1Text { id: openRow; anchors.centerIn: parent; text: "Open Control Center"; role: "footnote"; font.weight: Font.DemiBold }
-        HoverHandler { id: openHover; cursorShape: Qt.PointingHandCursor }
-        TapHandler { id: openTap; onTapped: peek.openRequested() }
+        text: "Control Center"
+        onClicked: peek.openRequested()
     }
 }

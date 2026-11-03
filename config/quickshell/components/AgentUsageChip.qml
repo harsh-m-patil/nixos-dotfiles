@@ -52,16 +52,35 @@ Item {
         WlrLayershell.keyboardFocus: root.full ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         anchors { top: true; bottom: true; left: true; right: true }
-        mask: Region { item: root.full ? backdrop : shape }
+        IslandClickMask {
+            id: clickMask
+            panel: win
+            fullScreen: root.full
+            shape: shape
+        }
+        mask: clickMask
 
-        readonly property size peekSize: Qt.size(560, peek.implicitHeight + 40)
-        readonly property size fullSize: Qt.size(Math.min(width - 16, 820), Math.min(height - 48, [600, 520, 430][AgentUsageData.page]))
+        Connections {
+            target: shape
+            function onXChanged() { clickMask.changed() }
+            function onYChanged() { clickMask.changed() }
+            function onWidthChanged() { clickMask.changed() }
+            function onHeightChanged() { clickMask.changed() }
+            function onRadiusChanged() { clickMask.changed() }
+        }
 
-        Rectangle {
+        readonly property int peekPadH: 14
+        readonly property int peekPadV: 12
+        readonly property size peekSize: Qt.size(
+            Math.min(width - 16, Math.max(268, peek.implicitWidth + peekPadH * 2)),
+            peek.implicitHeight + peekPadV * 2 + 6)
+        readonly property size fullSize: Qt.size(Math.min(width - 16, 720), Math.min(height - 48, [480, 450, 360][AgentUsageData.page]))
+
+        IslandBackdrop {
             id: backdrop
-            anchors.fill: parent
-            color: "transparent"
-            TapHandler { onTapped: AgentUsageData.open = false }
+            active: root.full
+            shape: shape
+            onDismissed: AgentUsageData.open = false
         }
 
         Item {
@@ -88,6 +107,7 @@ Item {
 
         Rectangle {
             id: shape
+            z: root.full ? 100 : 0
             readonly property real cx: root.origin.x + root.width / 2
             readonly property real tw: root.state_ === "full" ? win.fullSize.width : root.state_ === "peek" ? win.peekSize.width : root.width
             readonly property real th: root.state_ === "full" ? win.fullSize.height : root.state_ === "peek" ? win.peekSize.height : 28
@@ -96,7 +116,7 @@ Item {
             y: root.origin.y
             width: tw
             height: th
-            radius: root.state_ === "compact" ? 14 : 30
+            radius: root.state_ === "compact" ? 14 : root.state_ === "peek" ? 20 : 26
             color: F1Hub.surface
             border.width: 1
             border.color: F1Hub.hairline
@@ -115,7 +135,7 @@ Item {
                 }
             }
             TapHandler {
-                enabled: !root.full
+                enabled: root.state_ === "compact"
                 onTapped: AgentUsageData.toggle(root.screenName)
             }
 
@@ -125,7 +145,8 @@ Item {
                 x: (shape.width - width) / 2
                 height: 28
                 spacing: 8
-                opacity: root.state_ === "compact" ? 1 : 0
+                visible: root.state_ === "compact"
+                opacity: visible ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 140 } }
 
                 AgentUsageRing {
@@ -150,9 +171,10 @@ Item {
 
             AgentUsagePeek {
                 id: peek
+                z: 2
                 x: (shape.width - width) / 2
-                y: 20
-                width: win.peekSize.width - 44
+                y: win.peekPadV
+                width: implicitWidth
                 opacity: root.state_ === "peek" ? 1 : 0
                 scale: root.state_ === "peek" ? 1 : 0.94
                 visible: opacity > 0.01
@@ -164,6 +186,7 @@ Item {
             // Full: built on first open, then kept warm.
             Loader {
                 id: hubLoader
+                z: root.full ? 0 : -1
                 x: (shape.width - width) / 2
                 width: win.fullSize.width
                 height: win.fullSize.height
@@ -177,8 +200,8 @@ Item {
                 Behavior on scale { NumberAnimation { duration: 380; easing.type: Easing.OutQuint } }
                 sourceComponent: AgentUsageContent {
                     anchors.fill: parent
-                    anchors.margins: 22
-                    anchors.topMargin: 20
+                    anchors.margins: 16
+                    anchors.topMargin: 14
                 }
             }
         }

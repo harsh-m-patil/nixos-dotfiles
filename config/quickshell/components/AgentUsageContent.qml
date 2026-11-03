@@ -6,7 +6,7 @@ import "."
 // Expanded island: headline figures, then Models / Days / Limits pages driven by the keyboard.
 ColumnLayout {
     id: hub
-    spacing: 14
+    spacing: 10
     property bool showHints: false
     property int model: 0
     property int day: Math.max(0, AgentUsageData.days.length - 1)
@@ -32,7 +32,7 @@ ColumnLayout {
         else if (k === Qt.Key_Backtab) d.page = (d.page + n - 1) % n
         else if (k === Qt.Key_R) d.refresh()
         else if (k === Qt.Key_Question || (k === Qt.Key_Slash && (e.modifiers & Qt.ShiftModifier))) showHints = !showHints
-        else if (d.page === 0 && (down || up)) model = clamp(model + (down ? 1 : -1), d.models.length)
+        else if (d.page === 0 && (down || up)) model = clamp(model + (down ? 1 : -1), Math.min(6, d.models.length))
         else if (d.page === 1 && (right || left || down || up)) day = clamp(day + (right || down ? 1 : -1), d.days.length)
         else return false
         return true
@@ -78,24 +78,83 @@ ColumnLayout {
     }
 
     // Headline figures
-    F1Group {
+    component Tag: Text {
+        color: F1Hub.ink3
+        font.family: Theme.fontFamily
+        font.pixelSize: 9
+        font.weight: Font.Bold
+        font.letterSpacing: 1.6
+    }
+
+    // Trip computer: odometers, the tightest limit as the main fuel gauge, service countdown
+    Rectangle {
         Layout.fillWidth: true
-        Layout.fillHeight: false
+        implicitHeight: 116
+        radius: 16
+        color: Theme.alpha(Theme.foreground, 0.03)
+        border.width: 1
+        border.color: F1Hub.hairline
         RowLayout {
-            Layout.fillWidth: true
-            spacing: 0
-            F1Stat { label: "Today"; value: Fmt.usd(hub.d.today.cost); sub: Fmt.tokens(hub.d.today.tokens) + " tokens" }
-            F1Stat { label: "This cycle"; value: Fmt.usd(hub.d.cycle.cost); sub: hub.d.cycle.sessions + " sessions · " + Fmt.tokens(hub.d.cycle.tokens) + " tokens" }
-            F1Stat {
-                label: "Tightest limit"
-                value: hub.d.tightest ? hub.d.tightest.left + "% left" : "—"
-                sub: hub.d.tightest ? hub.d.tightest.label : ""
-                accent: hub.d.tightest && hub.d.tightest.left <= 35 ? hub.d.accent : F1Hub.ink
+            anchors.fill: parent
+            anchors.leftMargin: 18
+            anchors.rightMargin: 18
+            spacing: 16
+            ColumnLayout {
+                spacing: 6
+                HudOdometer {
+                    label: "Trip · today"
+                    cell: 15
+                    text: Fmt.usd(hub.d.today.cost)
+                    sub: Fmt.tokens(hub.d.today.tokens) + " tokens"
+                }
+                HudOdometer {
+                    label: "Odo · cycle"
+                    cell: 12
+                    accent: F1Hub.ink2
+                    text: Fmt.usd(hub.d.cycle.cost)
+                    sub: hub.d.cycle.sessions + " sessions · " + Fmt.tokens(hub.d.cycle.tokens)
+                }
             }
-            F1Stat {
-                label: "Cycle ends"
-                value: hub.d.cycleEnd > 0 ? Qt.formatDate(new Date(hub.d.cycleEnd), "MMM d") : "—"
-                sub: hub.d.cycleEnd > 0 ? hub.d.resetsIn(hub.d.cycleEnd) : ""
+            Item { Layout.fillWidth: true }
+            HudFuel {
+                Layout.preferredWidth: 210
+                Layout.preferredHeight: 108
+                label: hub.d.tightest ? hub.d.tightest.label : "No limits"
+                value: hub.d.tightest ? hub.d.tightest.left / 100 : 1
+                readout: hub.d.tightest ? hub.d.tightest.left + "% left" : "—"
+                sub: hub.d.tightest ? hub.d.resetsIn(hub.d.tightest.resetsAt) : ""
+            }
+            Item { Layout.fillWidth: true }
+            ColumnLayout {
+                spacing: 2
+                Layout.alignment: Qt.AlignVCenter
+                Tag { Layout.alignment: Qt.AlignRight; text: "SERVICE DUE" }
+                Text {
+                    Layout.alignment: Qt.AlignRight
+                    text: hub.d.cycleEnd > 0 ? Qt.formatDate(new Date(hub.d.cycleEnd), "MMM d").toUpperCase() : "—"
+                    color: F1Hub.ink
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 22
+                    font.weight: Font.Bold
+                }
+                Text {
+                    Layout.alignment: Qt.AlignRight
+                    text: hub.d.cycleEnd > 0 ? hub.d.resetsIn(hub.d.cycleEnd).replace("resets ", "") : ""
+                    color: F1Hub.ink2
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 10
+                }
+                Item { implicitHeight: 8 }
+                Tag { Layout.alignment: Qt.AlignRight; text: "AVG / DAY" }
+                Text {
+                    Layout.alignment: Qt.AlignRight
+                    text: Fmt.usd(hub.d.days.length ? hub.d.cycle.cost / hub.d.days.length : 0)
+                    color: F1Hub.ink
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 14
+                    font.weight: Font.Bold
+                    font.features: { "tnum": 1 }
+                }
             }
         }
     }
@@ -116,7 +175,7 @@ ColumnLayout {
                 detail: hub.d.models.length + " this cycle"
                 pad: 4
                 Repeater {
-                    model: hub.d.models
+                    model: hub.d.models.slice(0, 6)
                     AgentUsageRow {
                         required property var modelData
                         required property int index
@@ -143,10 +202,50 @@ ColumnLayout {
                     text: hub.selModel ? hub.selModel.name : "No models yet"
                     role: "headline"
                 }
-                F1Stat { label: "Cost"; value: hub.selModel ? Fmt.usd(hub.selModel.cost) : ""; sub: hub.selModel ? Fmt.pct(hub.selModel.share, 0) + " of cycle spend" : "" }
-                F1Stat { label: "Tokens"; value: hub.selModel ? Fmt.tokens(hub.selModel.tokens) : "" }
-                F1Stat { label: "Requests"; value: hub.selModel ? String(hub.selModel.events) : ""; sub: hub.selModel ? hub.selModel.provider : "" }
-                Item { Layout.fillHeight: true }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.margins: 8
+                    spacing: 12
+                    HudGauge {
+                        Layout.preferredWidth: 160
+                        Layout.preferredHeight: 140
+                        label: "of spend"
+                        value: hub.selModel ? hub.selModel.share : 0
+                        redline: 1.01
+                        accent: Theme.iris
+                        sub: hub.selModel ? Fmt.usd(hub.selModel.cost) : ""
+                    }
+                    GridLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
+                        columns: 1
+                        rowSpacing: 10
+                        Repeater {
+                            model: hub.selModel ? [
+                                ["TOKENS", Fmt.tokens(hub.selModel.tokens)],
+                                ["REQUESTS", String(hub.selModel.events)],
+                                ["PER REQUEST", Fmt.usd(hub.selModel.events ? hub.selModel.cost / hub.selModel.events : 0)],
+                                ["PROVIDER", hub.selModel.provider || "—"]
+                            ] : []
+                            ColumnLayout {
+                                required property var modelData
+                                spacing: 1
+                                Tag { text: modelData[0] }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: modelData[1]
+                                    color: F1Hub.ink
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 15
+                                    font.weight: Font.Bold
+                                    font.features: { "tnum": 1 }
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -187,27 +286,30 @@ ColumnLayout {
         // Limits: every window plus included spend
         F1Group {
             title: "Subscription limits"
-            pad: 18
-            ColumnLayout {
+            pad: 10
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: 18
+                spacing: 4
                 Repeater {
                     model: hub.d.limits
-                    AgentUsageMeter {
+                    HudFuel {
                         required property var modelData
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 118
                         label: modelData.label
-                        detail: modelData.resetsAt > 0 ? "resets " + Qt.formatDate(new Date(modelData.resetsAt), "MMM d") : ""
-                        value: Math.round(modelData.used) + "% used · " + modelData.left + "% left"
-                        fraction: modelData.used / 100
-                        accent: modelData.left <= 15 ? Theme.love : modelData.left <= 35 ? Theme.gold : Theme.iris
+                        value: modelData.left / 100
+                        readout: modelData.left + "% left"
+                        sub: modelData.resetsAt > 0 ? "resets " + Qt.formatDate(new Date(modelData.resetsAt), "MMM d") : ""
                     }
                 }
-                AgentUsageMeter {
+                HudFuel {
                     visible: hub.d.spend !== null
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 118
                     label: "Included spend"
-                    value: hub.d.spend ? Fmt.usd(hub.d.spend.used) + " of " + Fmt.usd(hub.d.spend.limit) : ""
-                    fraction: hub.d.spend ? hub.d.spend.used / hub.d.spend.limit : 0
-                    accent: hub.d.spend && hub.d.spend.used >= hub.d.spend.limit ? Theme.love : Theme.foam
+                    value: hub.d.spend ? Math.max(0, 1 - hub.d.spend.used / hub.d.spend.limit) : 0
+                    readout: hub.d.spend ? Fmt.usd(hub.d.spend.used) : ""
+                    sub: hub.d.spend ? "of " + Fmt.usd(hub.d.spend.limit) : ""
                 }
                 F1Text {
                     visible: hub.d.limits.length === 0 && hub.d.spend === null

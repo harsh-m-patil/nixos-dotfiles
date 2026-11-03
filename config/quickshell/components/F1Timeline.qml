@@ -6,6 +6,7 @@ import "."
 // The weekend's sessions on one track line, filled up to "now".
 Item {
     id: tl
+    property bool dense: false
     readonly property var sessions: F1Data.sessions
     readonly property int n: sessions.length
     readonly property real fill: {
@@ -22,12 +23,12 @@ Item {
     readonly property real inset: width / n / 2
 
     Layout.fillWidth: true
-    implicitHeight: 52
+    implicitHeight: dense ? 34 : 52
     visible: n > 0
 
     Rectangle {
         x: tl.inset
-        y: 7
+        y: dense ? 4 : 7
         width: tl.width - tl.inset * 2
         height: 2
         radius: 1
@@ -58,8 +59,8 @@ Item {
                 Rectangle {
                     id: dot
                     anchors.horizontalCenter: parent.horizontalCenter
-                    y: 8 - height / 2
-                    width: parent.live || parent.next ? 12 : 8
+                    y: (tl.dense ? 5 : 8) - height / 2
+                    width: parent.live || parent.next ? (tl.dense ? 9 : 12) : (tl.dense ? 6 : 8)
                     height: width
                     radius: width / 2
                     color: parent.live ? Theme.love : parent.done ? F1Hub.ink : F1Hub.surface
@@ -77,17 +78,28 @@ Item {
                 Column {
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.bottom: parent.bottom
-                    spacing: 1
+                    spacing: tl.dense ? 0 : 1
                     F1Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: modelData.label
-                        role: "footnote"
+                        text: tl.dense
+                            ? (F1Data.sessionShort[modelData.label] ?? modelData.label)
+                            : modelData.label
+                        role: tl.dense ? "caption" : "footnote"
                         tone: parent.parent.done && !parent.parent.live ? "tertiary" : "primary"
                         font.weight: parent.parent.next || parent.parent.live ? Font.DemiBold : Font.Medium
                     }
                     F1Text {
                         anchors.horizontalCenter: parent.horizontalCenter
+                        visible: !tl.dense
                         text: Qt.formatDateTime(modelData.start, "ddd HH:mm")
+                        role: "caption"
+                        tone: "tertiary"
+                        numeric: true
+                    }
+                    F1Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        visible: tl.dense
+                        text: Qt.formatDateTime(modelData.start, "HH:mm")
                         role: "caption"
                         tone: "tertiary"
                         numeric: true

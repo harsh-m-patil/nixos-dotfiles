@@ -7,6 +7,9 @@ WallpaperPickerWindow 1.0 WallpaperPickerWindow.qml
 CardDeck 1.0 CardDeck.qml
 PickerHints 1.0 PickerHints.qml
 Island 1.0 Island.qml
+IslandClickMask 1.0 IslandClickMask.qml
+IslandBackdrop 1.0 IslandBackdrop.qml
+IslandOpenButton 1.0 IslandOpenButton.qml
 TopBar 1.0 TopBar.qml
 WorkspacesRow 1.0 WorkspacesRow.qml
 WindowTitle 1.0 WindowTitle.qml
@@ -57,6 +60,7 @@ SysInfo 1.0 SysInfo.qml
 singleton F1Data 1.0 F1Data.qml
 singleton F1Hub 1.0 F1Hub.qml
 F1Chip 1.0 F1Chip.qml
+F1Peek 1.0 F1Peek.qml
 F1HubContent 1.0 F1HubContent.qml
 F1Hero 1.0 F1Hero.qml
 F1Timeline 1.0 F1Timeline.qml
@@ -92,6 +96,11 @@ MediaExpanded 1.0 MediaExpanded.qml
 singleton Fmt 1.0 Fmt.qml
 singleton StatusData 1.0 StatusData.qml
 StatusTile 1.0 StatusTile.qml
+HudBar 1.0 HudBar.qml
+HudFuel 1.0 HudFuel.qml
+HudGauge 1.0 HudGauge.qml
+HudOdometer 1.0 HudOdometer.qml
+HudTelltale 1.0 HudTelltale.qml
 StatusSlider 1.0 StatusSlider.qml
 StatusSpark 1.0 StatusSpark.qml
 StatusPeek 1.0 StatusPeek.qml
