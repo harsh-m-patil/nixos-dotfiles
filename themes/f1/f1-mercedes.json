@@ -1,0 +1,48 @@
+{
+  "id": "f1-mercedes",
+  "name": "F1 · Mercedes",
+  "f1": {
+    "season": 2026,
+    "constructor": "Mercedes",
+    "primary": "#000000",
+    "secondary": "#00D7B6"
+  },
+  "ghostty": {
+    "theme": "Rose Pine",
+    "background": "#191724"
+  },
+  "tmux": {
+    "plugin": "rose-pine",
+    "variant": "main"
+  },
+  "colors": {
+    "background": "#191724",
+    "foreground": "#e0def4",
+    "surface": "#1f1d2e",
+    "overlay": "#26233a",
+    "muted": "#6e6a86",
+    "subtle": "#908caa",
+    "highlightLow": "#2a283e",
+    "highlightMed": "#403d52",
+    "highlightHigh": "#524f67",
+    "iris": "#00D7B6",
+    "foam": "#A8B0BC",
+    "pine": "#009E88",
+    "gold": "#C0C5CE",
+    "love": "#ed8796",
+    "rose": "#4AE8D0"
+  },
+  "starship": {
+    "rose_base": "#191724",
+    "rose_text": "#e0def4",
+    "rose_muted": "#6e6a86",
+    "rose_subtle": "#908caa",
+    "rose_iris": "#00D7B6",
+    "rose_foam": "#A8B0BC",
+    "rose_love": "#ed8796",
+    "rose_gold": "#C0C5CE"
+  },
+  "wallpaper": {
+    "pool": "mercedes"
+  }
+}

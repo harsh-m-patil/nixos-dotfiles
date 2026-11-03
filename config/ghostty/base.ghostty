@@ -1,0 +1,13 @@
+font-family = "GeistMono Nerd Font"
+font-size = 13
+font-feature = -calt
+font-feature = -liga
+font-feature = -dlig
+window-decoration = none
+cursor-style-blink = false
+confirm-close-surface = false
+app-notifications = no-config-reload
+
+background-blur = true
+background-opacity = 0.85
+window-padding-x = 5

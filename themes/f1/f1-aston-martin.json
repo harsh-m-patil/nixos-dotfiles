@@ -1,0 +1,48 @@
+{
+  "id": "f1-aston-martin",
+  "name": "F1 · Aston Martin",
+  "f1": {
+    "season": 2026,
+    "constructor": "Aston Martin",
+    "primary": "#229971",
+    "secondary": "#CEDC00"
+  },
+  "ghostty": {
+    "theme": "Rose Pine",
+    "background": "#191724"
+  },
+  "tmux": {
+    "plugin": "rose-pine",
+    "variant": "main"
+  },
+  "colors": {
+    "background": "#191724",
+    "foreground": "#e0def4",
+    "surface": "#1f1d2e",
+    "overlay": "#26233a",
+    "muted": "#6e6a86",
+    "subtle": "#908caa",
+    "highlightLow": "#2a283e",
+    "highlightMed": "#403d52",
+    "highlightHigh": "#524f67",
+    "iris": "#229971",
+    "foam": "#CEDC00",
+    "pine": "#1A7A5C",
+    "gold": "#CEDC00",
+    "love": "#ed8796",
+    "rose": "#3DD4B0"
+  },
+  "starship": {
+    "rose_base": "#191724",
+    "rose_text": "#e0def4",
+    "rose_muted": "#6e6a86",
+    "rose_subtle": "#908caa",
+    "rose_iris": "#229971",
+    "rose_foam": "#CEDC00",
+    "rose_love": "#ed8796",
+    "rose_gold": "#CEDC00"
+  },
+  "wallpaper": {
+    "pool": "aston-martin"
+  }
+}

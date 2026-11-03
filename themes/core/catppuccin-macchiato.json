@@ -1,0 +1,39 @@
+{
+  "id": "catppuccin-macchiato",
+  "name": "Catppuccin Macchiato",
+  "ghostty": {
+    "theme": "Catppuccin Macchiato",
+    "background": "#24273a"
+  },
+  "tmux": {
+    "plugin": "rose-pine",
+    "variant": "moon"
+  },
+  "colors": {
+    "background": "#24273a",
+    "foreground": "#cad3f5",
+    "surface": "#363a4f",
+    "overlay": "#494d64",
+    "muted": "#6e738d",
+    "subtle": "#8087a2",
+    "iris": "#c6a0f6",
+    "foam": "#91d7e3",
+    "pine": "#8bd5ca",
+    "gold": "#eed49f",
+    "love": "#ed8796",
+    "rose": "#ee99a0",
+    "highlightLow": "#363a4f",
+    "highlightMed": "#494d64",
+    "highlightHigh": "#6e738d"
+  },
+  "starship": {
+    "rose_base": "#24273a",
+    "rose_text": "#cad3f5",
+    "rose_muted": "#6e738d",
+    "rose_subtle": "#8087a2",
+    "rose_iris": "#c6a0f6",
+    "rose_foam": "#91d7e3",
+    "rose_love": "#ed8796",
+    "rose_gold": "#eed49f"
+  }
+}

@@ -1,0 +1,121 @@
+# aliases 
+#
+alias ls='ls $LS_OPTIONS'
+alias leet='NVIM_APPNAME="leetcode" nvim leetcode.nvim'
+alias cp="cp -i"                                                # Confirm before overwriting something
+alias df='df -h'                                                # Human-readable sizes
+alias free='free -m'                                            # Show sizes in MB
+alias cl='clear'
+alias tmux='tmux -u'
+alias tls='tmux ls'
+alias treeg='tree --gitignore -a -I .git'
+alias mgr='mongod --dbpath="/home/harsh/.db/data"' # start the mongodb server
+alias cht='cheatsheet.sh'
+alias et='eza --tree -a  --icons=always --git-ignore'
+alias lg='lazygit'
+alias el='eza --icons'
+alias t='tmux-session.sh'
+alias c='cheatsheet.sh'
+alias sv='cat "$(fd -e svg . ~/SVGs | fzf)" | wl-copy'
+alias svg="fd -e svg . ~/SVGs | fzf --preview 'kitty +kitten icat {} 2>/dev/null' --preview-window=right:70% | xargs cat | wl-copy"
+function sesh-sessions() {
+  {
+    exec </dev/tty
+    exec <&1
+    local session
+    session=$(sesh list -t -c | fzf --height 40% --reverse --border-label ' sesh ' --border --prompt '⚡  ' --preview 'sesh preview {}')
+    zle reset-prompt > /dev/null 2>&1 || true
+    [[ -z "$session" ]] && return
+    sesh connect $session
+  }
+}
+
+sesh-all ()
+{
+  exec </dev/tty
+  exec <&1
+  local session
+  session=$(sesh list | fzf --reverse --border --prompt '⚡  ' --preview 'sesh preview {}' )
+  zle reset-prompt > /dev/null 2>&1 || true
+  [[ -z "$session" ]] && return
+  sesh connect $session
+}
+
+mkcd() {
+  mkdir -p "$1" && cd "$1"
+}
+
+# macOS-like `open` on Linux (xdg-open + a few familiar flags)
+open() {
+  emulate -L zsh
+  local app reveal=false use_editor=false
+  local -a targets
+
+  while (( $# )); do
+    case $1 in
+      -a)
+        shift
+        (( $# )) || { print -u2 "open: -a requires an application name"; return 1 }
+        app=$1
+        shift
+        ;;
+      -R)
+        reveal=true
+        shift
+        ;;
+      -t|-e)
+        use_editor=true
+        shift
+        ;;
+      -*)
+        print -u2 "open: unknown option $1"
+        return 1
+        ;;
+      *)
+        targets+=($1)
+        shift
+        ;;
+    esac
+  done
+
+  if (( ${#targets} == 0 )); then
+    print -u2 "Usage: open [-a app] [-R] [-t|-e] file|directory|url ..."
+    return 1
+  fi
+
+  for target in "${targets[@]}"; do
+    local path=${target:a}
+
+    if $reveal; then
+      if [[ -e $path ]]; then
+        command nautilus --select "$path" 2>/dev/null \
+          || xdg-open "${path:h}"
+      else
+        print -u2 "open: no such file: $target"
+        return 1
+      fi
+    elif $use_editor; then
+      ${=EDITOR:-nvim} "$path"
+    elif [[ -n $app ]]; then
+      if command -v "$app" >/dev/null; then
+        command "$app" "$path"
+      elif command -v gtk-launch >/dev/null; then
+        gtk-launch "$app" "$path" 2>/dev/null || {
+          print -u2 "open: application not found: $app"
+          return 1
+        }
+      else
+        print -u2 "open: application not found: $app"
+        return 1
+      fi
+    else
+      xdg-open "$path"
+    fi
+  done
+}
+
+# CTRL K
+zle     -N            sesh-all
+bindkey -M emacs '^k' sesh-all
+bindkey -M vicmd '^k' sesh-all
+bindkey -M viins '^k' sesh-all

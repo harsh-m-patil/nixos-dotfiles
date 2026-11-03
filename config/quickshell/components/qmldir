@@ -1,0 +1,78 @@
+singleton Settings 1.0 Settings.qml
+singleton Theme 1.0 Theme.qml
+singleton WallpaperData 1.0 WallpaperData.qml
+ThemePicker 1.0 ThemePicker.qml
+ThemePickerWindow 1.0 ThemePickerWindow.qml
+WallpaperPickerWindow 1.0 WallpaperPickerWindow.qml
+CardDeck 1.0 CardDeck.qml
+PickerHints 1.0 PickerHints.qml
+Island 1.0 Island.qml
+TopBar 1.0 TopBar.qml
+WorkspacesRow 1.0 WorkspacesRow.qml
+WindowTitle 1.0 WindowTitle.qml
+MediaIsland 1.0 MediaIsland.qml
+ClockChip 1.0 ClockChip.qml
+singleton AgentUsageData 1.0 AgentUsageData.qml
+AgentUsageChip 1.0 AgentUsageChip.qml
+UsageDailyChart 1.0 UsageDailyChart.qml
+StatusRow 1.0 StatusRow.qml
+AudioPopup 1.0 AudioPopup.qml
+TrayIsland 1.0 TrayIsland.qml
+StatusIcon 1.0 StatusIcon.qml
+MediaButton 1.0 MediaButton.qml
+WaveBars 1.0 WaveBars.qml
+MediaCard 1.0 MediaCard.qml
+BarPopup 1.0 BarPopup.qml
+StatBar 1.0 StatBar.qml
+WifiPopup 1.0 WifiPopup.qml
+SystemPopup 1.0 SystemPopup.qml
+SystemStatusChip 1.0 SystemStatusChip.qml
+Gauge 1.0 Gauge.qml
+singleton SystemData 1.0 SystemData.qml
+SystemWindow 1.0 SystemWindow.qml
+MonPanel 1.0 MonPanel.qml
+MonValue 1.0 MonValue.qml
+MonStat 1.0 MonStat.qml
+MonBar 1.0 MonBar.qml
+MonChart 1.0 MonChart.qml
+MonKV 1.0 MonKV.qml
+MonKey 1.0 MonKey.qml
+MonRate 1.0 MonRate.qml
+MonMeter 1.0 MonMeter.qml
+MonThreads 1.0 MonThreads.qml
+MonMemBar 1.0 MonMemBar.qml
+MonProcRow 1.0 MonProcRow.qml
+SysOverview 1.0 SysOverview.qml
+SysProcesses 1.0 SysProcesses.qml
+SysPerformance 1.0 SysPerformance.qml
+SysInfo 1.0 SysInfo.qml
+singleton F1Data 1.0 F1Data.qml
+F1Chip 1.0 F1Chip.qml
+TrackMap 1.0 TrackMap.qml
+singleton ThemeApplier 1.0 ThemeApplier.qml
+SystemSampler 1.0 SystemSampler.qml
+PickerWindow 1.0 PickerWindow.qml
+singleton TeamAssets 1.0 TeamAssets.qml
+CachedFetch 1.0 CachedFetch.qml
+singleton Backlight 1.0 Backlight.qml
+singleton MonitorData 1.0 MonitorData.qml
+MonitorPopup 1.0 MonitorPopup.qml
+singleton Network 1.0 Network.qml
+singleton Media 1.0 Media.qml
+MediaHold 1.0 MediaHold.qml
+singleton Fmt 1.0 Fmt.qml
+F1Label 1.0 F1Label.qml
+F1Card 1.0 F1Card.qml
+F1Pill 1.0 F1Pill.qml
+F1DriverRow 1.0 F1DriverRow.qml
+F1TeamDriverTile 1.0 F1TeamDriverTile.qml
+F1TeamDriverPair 1.0 F1TeamDriverPair.qml
+F1Podium 1.0 F1Podium.qml
+F1StatTile 1.0 F1StatTile.qml
+F1PointsRow 1.0 F1PointsRow.qml
+F1Page 1.0 F1Page.qml
+F1WeekendPage 1.0 F1WeekendPage.qml
+F1CircuitPage 1.0 F1CircuitPage.qml
+F1LastRacePage 1.0 F1LastRacePage.qml
+F1MyTeamPage 1.0 F1MyTeamPage.qml
+F1StandingsPage 1.0 F1StandingsPage.qml

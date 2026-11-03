@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Single entry point for day-to-day dotfiles actions. Run `dotfiles help`.
+set -euo pipefail
+
+DOTFILES="${DOTFILES:-$HOME/nixos-dotfiles}"
+export DOTFILES
+SCRIPTS="$DOTFILES/scripts"
+APPLY_THEME="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/apply-theme.sh"
+
+usage() {
+  cat <<'EOF'
+usage: dotfiles <command> [args]
+
+  install [--yes]         create hosts/<hostname>/ and switch to it
+  doctor                  check that everything is wired up
+  switch [args]           nixos-rebuild switch for this hostname
+  migrate                 run pending scripts/migrations/*.sh
+  hook <event> [args]     run config/hooks/<event>.d/*
+  theme build [--check]   validate themes/ and rebuild themes.json
+  theme list              list theme ids
+  theme get               print the active theme id
+  theme set <id>          apply a theme (via the running bar, else apply-theme.sh)
+  theme cycle             next F1 team theme
+  wallpaper cycle         next wallpaper in the theme's pool
+  bar toggle              show/hide the bar
+  bar restart             restart quickshell
+  hypr reload             reload Hyprland and print config errors
+  test                    run tests/*-test.sh
+EOF
+}
+
+bar_running() { qs ipc call theme get >/dev/null 2>&1; }
+
+cmd="${1:-help}"
+shift || true
+
+case "$cmd" in
+  switch) sudo nixos-rebuild switch --flake "$DOTFILES#$(hostname)" "$@" ;;
+  install) exec bash "$SCRIPTS/install.sh" "$@" ;;
+  doctor)  exec bash "$SCRIPTS/doctor.sh" ;;
+  migrate) exec bash "$SCRIPTS/migrate.sh" ;;
+  hook)    exec bash "$SCRIPTS/hook.sh" "$@" ;;
+  theme)
+    case "${1:-}" in
+      build) exec bash "$SCRIPTS/build-themes.sh" "${@:2}" ;;
+      list) jq -r '.themes[] | "\(.id)\t\(.name)"' "$DOTFILES/config/quickshell/themes.json" ;;
+      get)  bar_running && qs ipc call theme get || jq -r '.id' "${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/theme-state.json" ;;
+      set)
+        [[ -n "${2:-}" ]] || { echo "usage: dotfiles theme set <id>" >&2; exit 2; }
+        if bar_running; then qs ipc call theme set "$2"; else "$APPLY_THEME" "$2"; fi
+        ;;
+      cycle) qs ipc call theme cycle ;;
+      *) usage; exit 2 ;;
+    esac
+    ;;
+  wallpaper)
+    [[ "${1:-}" == "cycle" ]] || { usage; exit 2; }
+    qs ipc call theme cycleWallpaper
+    ;;
+  bar)
+    case "${1:-}" in
+      toggle)  qs ipc call bar toggle ;;
+      restart) qs kill >/dev/null 2>&1 || true; setsid qs -d >/dev/null 2>&1 </dev/null & ;;
+      *) usage; exit 2 ;;
+    esac
+    ;;
+  hypr)
+    [[ "${1:-}" == "reload" ]] || { usage; exit 2; }
+    hyprctl reload >/dev/null
+    hyprctl configerrors
+    ;;
+  test)
+    status=0
+    for t in "$DOTFILES"/tests/*-test.sh; do
+      echo "== $(basename "$t")"
+      bash "$t" || status=1
+    done
+    exit "$status"
+    ;;
+  help|-h|--help) usage ;;
+  *) usage; exit 2 ;;
+esac

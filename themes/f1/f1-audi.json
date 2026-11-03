@@ -1,0 +1,48 @@
+{
+  "id": "f1-audi",
+  "name": "F1 · Audi",
+  "f1": {
+    "season": 2026,
+    "constructor": "Audi",
+    "primary": "#C8CED4",
+    "secondary": "#F50537"
+  },
+  "ghostty": {
+    "theme": "Rose Pine",
+    "background": "#191724"
+  },
+  "tmux": {
+    "plugin": "rose-pine",
+    "variant": "main"
+  },
+  "colors": {
+    "background": "#191724",
+    "foreground": "#e0def4",
+    "surface": "#1f1d2e",
+    "overlay": "#26233a",
+    "muted": "#6e6a86",
+    "subtle": "#908caa",
+    "highlightLow": "#2a283e",
+    "highlightMed": "#403d52",
+    "highlightHigh": "#524f67",
+    "iris": "#F50537",
+    "foam": "#C8CED4",
+    "pine": "#9A9A9A",
+    "gold": "#C8CED4",
+    "love": "#ed8796",
+    "rose": "#FF5A73"
+  },
+  "starship": {
+    "rose_base": "#191724",
+    "rose_text": "#e0def4",
+    "rose_muted": "#6e6a86",
+    "rose_subtle": "#908caa",
+    "rose_iris": "#F50537",
+    "rose_foam": "#C8CED4",
+    "rose_love": "#ed8796",
+    "rose_gold": "#C8CED4"
+  },
+  "wallpaper": {
+    "pool": "audi"
+  }
+}

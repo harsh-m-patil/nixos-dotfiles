@@ -1,0 +1,39 @@
+{
+  "id": "rose-pine",
+  "name": "Rosé Pine",
+  "ghostty": {
+    "theme": "Rose Pine",
+    "background": "#191724"
+  },
+  "tmux": {
+    "plugin": "rose-pine",
+    "variant": "main"
+  },
+  "colors": {
+    "background": "#191724",
+    "foreground": "#e0def4",
+    "surface": "#1f1d2e",
+    "overlay": "#26233a",
+    "muted": "#6e6a86",
+    "subtle": "#908caa",
+    "iris": "#c4a7e7",
+    "foam": "#9ccfd8",
+    "pine": "#31748f",
+    "gold": "#f6c177",
+    "love": "#eb6f92",
+    "rose": "#ebbcba",
+    "highlightLow": "#2a283e",
+    "highlightMed": "#403d52",
+    "highlightHigh": "#524f67"
+  },
+  "starship": {
+    "rose_base": "#191724",
+    "rose_text": "#e0def4",
+    "rose_muted": "#6e6a86",
+    "rose_subtle": "#908caa",
+    "rose_iris": "#c4a7e7",
+    "rose_foam": "#9ccfd8",
+    "rose_love": "#eb6f92",
+    "rose_gold": "#f6c177"
+  }
+}

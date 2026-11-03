@@ -1,0 +1,10 @@
+config/hypr/local.lua
+__pycache__/
+*.pyc
+config/quickshell/usage-transcript-cache.json
+config/quickshell/themes.json
+config/ghostty/config.ghostty
+config/fastfetch/config.jsonc
+result
+result-*
+config/quickshell/usage-models-dev-rates.json

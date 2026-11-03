@@ -1,0 +1,48 @@
+{
+  "id": "f1-red-bull",
+  "name": "F1 · Red Bull",
+  "f1": {
+    "season": 2026,
+    "constructor": "Red Bull Racing",
+    "primary": "#4781D7",
+    "secondary": "#FFCC00"
+  },
+  "ghostty": {
+    "theme": "Rose Pine",
+    "background": "#191724"
+  },
+  "tmux": {
+    "plugin": "rose-pine",
+    "variant": "main"
+  },
+  "colors": {
+    "background": "#191724",
+    "foreground": "#e0def4",
+    "surface": "#1f1d2e",
+    "overlay": "#26233a",
+    "muted": "#6e6a86",
+    "subtle": "#908caa",
+    "highlightLow": "#2a283e",
+    "highlightMed": "#403d52",
+    "highlightHigh": "#524f67",
+    "iris": "#4781D7",
+    "foam": "#FFCC00",
+    "pine": "#2E5FA8",
+    "gold": "#FFCC00",
+    "love": "#E8002D",
+    "rose": "#6B9AEF"
+  },
+  "starship": {
+    "rose_base": "#191724",
+    "rose_text": "#e0def4",
+    "rose_muted": "#6e6a86",
+    "rose_subtle": "#908caa",
+    "rose_iris": "#4781D7",
+    "rose_foam": "#FFCC00",
+    "rose_love": "#E8002D",
+    "rose_gold": "#FFCC00"
+  },
+  "wallpaper": {
+    "pool": "red-bull"
+  }
+}

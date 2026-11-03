@@ -1,0 +1,48 @@
+{
+  "id": "f1-cadillac",
+  "name": "F1 · Cadillac",
+  "f1": {
+    "season": 2026,
+    "constructor": "Cadillac",
+    "primary": "#FFFFFF",
+    "secondary": "#000000"
+  },
+  "ghostty": {
+    "theme": "Rose Pine",
+    "background": "#191724"
+  },
+  "tmux": {
+    "plugin": "rose-pine",
+    "variant": "main"
+  },
+  "colors": {
+    "background": "#191724",
+    "foreground": "#e0def4",
+    "surface": "#1f1d2e",
+    "overlay": "#26233a",
+    "muted": "#6e6a86",
+    "subtle": "#908caa",
+    "highlightLow": "#2a283e",
+    "highlightMed": "#403d52",
+    "highlightHigh": "#524f67",
+    "iris": "#F0F0F0",
+    "foam": "#909090",
+    "pine": "#5C5C5C",
+    "gold": "#FFFFFF",
+    "love": "#ed8796",
+    "rose": "#B8B8B8"
+  },
+  "starship": {
+    "rose_base": "#191724",
+    "rose_text": "#e0def4",
+    "rose_muted": "#6e6a86",
+    "rose_subtle": "#908caa",
+    "rose_iris": "#909090",
+    "rose_foam": "#B8B8B8",
+    "rose_love": "#ed8796",
+    "rose_gold": "#5C5C5C"
+  },
+  "wallpaper": {
+    "pool": "cadillac"
+  }
+}
