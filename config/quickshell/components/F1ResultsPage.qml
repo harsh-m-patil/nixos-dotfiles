@@ -5,95 +5,155 @@ import "."
 
 F1Page {
     id: page
-    property int source: 0              // 0 latest session · 1 last grand prix
+    property int choice: 0              // 0 latest session · 1 last grand prix
     property int cursor: 0
+    // Between weekends the latest session is that Grand Prix's race: one source, no toggle.
+    readonly property bool same: {
+        const s = F1Data.session, r = F1Data.lastRace
+        if (!s || !r) return !s
+        const race = F1Data.races.find(x => x.round === r.round)
+        const start = race?.sessions[race.sessions.length - 1]?.start
+        return s.name === "Race" && !!start && Math.abs(s.ended - start) < F1Data.day
+    }
+    readonly property int source: same ? 1 : choice
     readonly property var rows: source === 0 ? (F1Data.session?.results ?? []) : (F1Data.lastRace?.results ?? [])
     readonly property var picked: rows[cursor] ?? null
-    readonly property int half: Math.ceil(rows.length / 2)
+    readonly property var standing: F1Data.driverStandings.find(d => d.code === picked?.code) ?? null
+    readonly property int gained: picked && picked.grid > 0 ? picked.grid - picked.pos : 0
 
-    hints: [["s", "Session / Grand Prix"], ["j k", "Move"], ["h l", "Column"]]
+    hints: (same ? [] : [["s", "Session / Grand Prix"]]).concat([["j k", "Move"], ["g G", "Top / Bottom"]])
     onSourceChanged: cursor = 0
 
     function handleKey(e) {
-        if (e.key === Qt.Key_S) { source = 1 - source; return true }
-        const v = vertical(e), h = horizontal(e)
+        if (e.key === Qt.Key_S && !same) { choice = 1 - choice; return true }
+        const v = vertical(e)
         if (v) { cursor = clamp(cursor + v, rows.length); return true }
-        if (h) { cursor = clamp(h > 0 ? cursor + half : cursor - half, rows.length); return true }
+        if (e.key === Qt.Key_G) { cursor = e.modifiers & Qt.ShiftModifier ? rows.length - 1 : 0; return true }
         return false
     }
 
-    ColumnLayout {
+    F1Grid {
         anchors.fill: parent
-        spacing: 12
 
-        RowLayout {
-            Layout.fillWidth: true
+        F1Tile {
+            id: list
+            readonly property real rowHeight: Math.min(32, Math.floor((height - 16 - 38) / Math.max(1, page.rows.length)))
+            col: 0; row: 0; colSpan: 2; rowSpan: 3
+            pad: 8
+            clip: true
             F1Segmented {
-                items: [F1Data.session?.name ?? "Latest session", F1Data.lastRace ? F1Data.lastRace.short + " Grand Prix" : "Last Grand Prix"]
+                visible: !page.same
+                Layout.alignment: Qt.AlignHCenter
+                Layout.bottomMargin: 4
+                items: [(F1Data.weekend ? F1Data.weekend.short + " · " : "") + (F1Data.session?.name ?? "Latest session"),
+                        F1Data.lastRace ? F1Data.lastRace.short + " Grand Prix" : "Last Grand Prix"]
                 current: page.source
-                onPicked: i => page.source = i
+                onPicked: i => page.choice = i
             }
-            Item { Layout.fillWidth: true }
-            F1Text {
-                text: page.source === 1 && F1Data.lastRace ? "Round " + F1Data.lastRace.round + " · " + F1Data.lastRace.season : ""
-                role: "footnote"; tone: "tertiary"
+            RowLayout {
+                visible: page.same
+                Layout.fillWidth: true
+                Layout.preferredHeight: 34
+                Layout.leftMargin: 8
+                Layout.rightMargin: 8
+                Layout.bottomMargin: 4
+                F1Text { text: F1Data.lastRace ? F1Data.lastRace.short + " Grand Prix" : ""; role: "headline"; Layout.fillWidth: true }
+                F1Text { text: F1Data.lastRace ? "Round " + F1Data.lastRace.round : ""; role: "caption"; tone: "tertiary"; numeric: true }
             }
+            Repeater {
+                model: page.rows
+                F1Row {
+                    required property var modelData
+                    required property int index
+                    Layout.fillHeight: false
+                    Layout.preferredHeight: list.rowHeight
+                    Layout.minimumHeight: list.rowHeight
+                    Layout.maximumHeight: list.rowHeight
+                    position: String(modelData.pos)
+                    title: modelData.name
+                    subtitle: page.source === 1 && modelData.fastest ? "Fastest lap" : ""
+                    value: modelData.time
+                    team: modelData.team
+                    selected: index === page.cursor
+                    separator: false
+                    onClicked: page.cursor = index
+                }
+            }
+            Item { Layout.fillHeight: true }
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            spacing: 12
-            Repeater {
-                model: 2
-                F1Group {
-                    id: col
-                    required property int index
-                    readonly property int offset: index * page.half
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 1
-                    Layout.fillHeight: true
-                    Repeater {
-                        model: page.rows.slice(col.offset, col.offset + page.half)
-                        F1Row {
-                            required property var modelData
-                            required property int index
-                            position: String(modelData.pos)
-                            title: modelData.name
-                            subtitle: page.source === 1 && modelData.fastest ? "Fastest lap" : ""
-                            value: modelData.time
-                            team: modelData.team
-                            selected: col.offset + index === page.cursor
-                            separator: index < page.half - 1
-                            onClicked: page.cursor = col.offset + index
-                        }
+        F1Tile {
+            col: 2; row: 0; colSpan: 2; rowSpan: 2
+            pad: 10
+            label: page.source === 0 ? (F1Data.session?.name ?? "") : F1Data.lastRace ? "Round " + F1Data.lastRace.round + " · " + F1Data.lastRace.season : ""
+            detail: page.source === 0 && F1Data.session ? Qt.formatDateTime(F1Data.session.ended, "ddd d MMM") : ""
+            F1Podium { entries: page.rows.slice(0, 3); height1: 300; Layout.fillHeight: true }
+        }
+
+        F1Tile {
+            col: 2; row: 2
+            pad: 8
+            F1Arc {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                value: page.picked ? (page.rows.length - page.picked.pos + 1) / Math.max(1, page.rows.length) : 0
+                thickness: 8
+                accent: F1Data.teamColour(page.picked?.team ?? "", F1Hub.accent)
+                Column {
+                    anchors.centerIn: parent
+                    F1Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: page.picked ? "P" + page.picked.pos : "—"
+                        role: "numeral"; numeric: true
+                    }
+                    F1Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: page.picked?.time ?? ""
+                        role: "caption"; tone: "secondary"; numeric: true
                     }
                 }
+                F1Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    width: parent.width - 20
+                    horizontalAlignment: Text.AlignHCenter
+                    text: page.picked?.name ?? ""
+                    role: "caption"; tone: "tertiary"
+                }
             }
         }
 
-        F1Group {
-            visible: page.picked !== null
-            Layout.fillHeight: false
-            RowLayout {
+        F1Tile {
+            col: 3; row: 2
+            label: page.source === 1 ? "Started" : "Championship"
+            F1Text {
+                text: !page.picked ? "—"
+                    : page.source === 1 ? (page.picked.grid === 0 ? "Pit" : "P" + page.picked.grid)
+                    : page.standing ? "P" + page.standing.pos : "—"
+                role: "numeral"; numeric: true
+            }
+            F1Text {
+                text: page.source === 1
+                    ? (page.picked && page.picked.grid > 0 ? (page.gained > 0 ? "+" : "") + page.gained + " places" : "from pit lane")
+                    : page.standing ? page.standing.points + " pts" : ""
+                role: "caption"
+                color: page.source === 1 && page.gained > 0 ? Theme.foam : page.source === 1 && page.gained < 0 ? F1Hub.live : F1Hub.ink3
+                numeric: true
+            }
+            Item { Layout.fillHeight: true }
+            F1Ticks {
                 Layout.fillWidth: true
-                spacing: 0
-                F1Stat { label: "Driver"; value: page.picked?.name ?? ""; sub: F1Data.teamName(page.picked?.team ?? ""); accent: F1Data.teamColour(page.picked?.team ?? "") }
-                F1Stat { label: "Finished"; value: page.picked ? "P" + page.picked.pos : ""; sub: page.picked?.time ?? "" }
-                F1Stat {
-                    visible: page.source === 1
-                    label: "Started"
-                    value: page.picked ? (page.picked.grid === 0 ? "Pit lane" : "P" + page.picked.grid) : ""
-                    sub: page.picked && page.picked.grid > 0 ? (page.picked.grid - page.picked.pos > 0 ? "+" : "") + (page.picked.grid - page.picked.pos) + " places" : ""
-                }
-                F1Stat { visible: page.source === 1; label: "Points"; value: page.picked ? String(page.picked.points) : ""; sub: page.picked?.fastest ? "Fastest lap " + page.picked.fastest : "" }
-                F1Stat {
-                    visible: page.source === 0
-                    label: "Championship"
-                    readonly property var st: F1Data.driverStandings.find(d => d.code === page.picked?.code) ?? null
-                    value: st ? "P" + st.pos : "—"
-                    sub: st ? st.points + " pts" : ""
-                }
+                cells: true
+                count: 10
+                value: page.source === 1 ? (page.picked?.points ?? 0) / 25
+                    : (page.standing?.points ?? 0) / Math.max(1, F1Data.driverStandings[0]?.points ?? 1)
+                accent: F1Data.teamColour(page.picked?.team ?? "", F1Hub.accent)
+            }
+            F1Text {
+                Layout.topMargin: 4
+                text: page.source === 1 ? (page.picked ? "+" + page.picked.points + " pts" + (page.picked.fastest ? " · fastest lap" : "") : "")
+                    : "share of leader"
+                role: "caption"; tone: "tertiary"
             }
         }
     }

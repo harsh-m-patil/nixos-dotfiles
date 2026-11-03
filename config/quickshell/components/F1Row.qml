@@ -28,8 +28,8 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 3
-        radius: 9
-        color: row.selected ? Theme.alpha(Theme.iris, 0.16)
+        radius: 10
+        color: row.selected ? Theme.alpha(F1Hub.accent, 0.2)
             : hover.hovered ? F1Hub.fill
             : row.mine ? Theme.alpha(row.tint, 0.08) : "transparent"
         Behavior on color { ColorAnimation { duration: 120 } }

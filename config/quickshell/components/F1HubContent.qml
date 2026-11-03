@@ -25,20 +25,44 @@ ColumnLayout {
         return true
     }
 
-    F1Hero { large: false; Layout.fillWidth: true }
-
     RowLayout {
         Layout.fillWidth: true
+        spacing: 12
+
+        Rectangle {
+            visible: flag.status === Image.Ready
+            Layout.preferredWidth: 36
+            Layout.preferredHeight: 24
+            radius: 6
+            color: "transparent"
+            clip: true
+            Image {
+                id: flag
+                anchors.fill: parent
+                source: F1Data.meeting?.flag ?? ""
+                sourceSize.width: 72
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+            }
+        }
+        ColumnLayout {
+            spacing: 0
+            Layout.fillWidth: true
+            F1Text {
+                text: F1Data.weekend ? "Round " + F1Data.weekend.round + "  ·  " + F1Data.weekend.locality : F1Data.season
+                role: "caption"; tone: "secondary"; Layout.fillWidth: true
+            }
+            F1Text { text: F1Data.weekend?.name ?? "Season complete"; role: "title"; Layout.fillWidth: true }
+        }
         F1Segmented {
             items: F1Hub.pages.map(p => p.name)
             keys: F1Hub.pages.map((p, i) => String(i + 1))
             current: F1Hub.page
             onPicked: i => F1Hub.page = i
         }
-        Item { Layout.fillWidth: true }
-        F1Text { text: F1Data.ready ? "" : "Loading…"; role: "footnote"; tone: "tertiary" }
+        F1Text { visible: !F1Data.ready; text: "Loading…"; role: "footnote"; tone: "tertiary" }
         Rectangle {
-            implicitWidth: 24; implicitHeight: 24; radius: 12
+            implicitWidth: 34; implicitHeight: 34; radius: 17
             color: hub.showHints ? F1Hub.fillStrong : F1Hub.fill
             F1Text { anchors.centerIn: parent; text: "?"; role: "footnote"; tone: "secondary" }
             TapHandler { onTapped: hub.showHints = !hub.showHints }

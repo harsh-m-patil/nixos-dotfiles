@@ -11,7 +11,7 @@ Rectangle {
     signal picked(int index)
 
     implicitWidth: row.implicitWidth + 6
-    implicitHeight: 30
+    implicitHeight: 34
     radius: height / 2
     color: F1Hub.fill
 

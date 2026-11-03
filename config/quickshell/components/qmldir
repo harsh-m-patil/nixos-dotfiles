@@ -80,6 +80,12 @@ F1ResultsPage 1.0 F1ResultsPage.qml
 F1StandingsPage 1.0 F1StandingsPage.qml
 F1CircuitPage 1.0 F1CircuitPage.qml
 F1SeasonPage 1.0 F1SeasonPage.qml
+F1Tile 1.0 F1Tile.qml
+F1Grid 1.0 F1Grid.qml
+F1Arc 1.0 F1Arc.qml
+F1Ticks 1.0 F1Ticks.qml
+F1Pill 1.0 F1Pill.qml
+F1Compass 1.0 F1Compass.qml
 TrackMap 1.0 TrackMap.qml
 singleton ThemeApplier 1.0 ThemeApplier.qml
 SystemSampler 1.0 SystemSampler.qml

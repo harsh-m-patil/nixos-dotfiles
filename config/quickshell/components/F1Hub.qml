@@ -23,11 +23,15 @@ Singleton {
     readonly property color ink: Theme.foreground
     readonly property color ink2: Theme.subtle
     readonly property color ink3: Theme.muted
-    // CarPlay-style tiles: filled grey on a near-black island, no outlines.
-    readonly property color fill: Theme.alpha(Theme.foreground, 0.07)
-    readonly property color fillStrong: Theme.alpha(Theme.foreground, 0.13)
+    // CarPlay dashboard: flat grey tiles on a near-black island, no outlines, one accent.
+    readonly property color fill: Theme.alpha(Theme.foreground, 0.075)
+    readonly property color fillStrong: Theme.alpha(Theme.foreground, 0.14)
+    readonly property color track: Theme.alpha(Theme.foreground, 0.1)
     readonly property color hairline: Theme.alpha(Theme.foreground, 0.06)
-    readonly property int tileRadius: 16
+    readonly property color accent: F1Data.teamColour(F1Data.myTeam, Theme.iris)
+    readonly property color live: Theme.love
+    readonly property int tileRadius: 22
+    readonly property int gap: 10
 
     function toggle(onScreen) {
         if (open && (!onScreen || onScreen === screen)) { open = false; return }

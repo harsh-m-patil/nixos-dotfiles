@@ -4,11 +4,13 @@ import "."
 
 // Type scale for the F1 hub. Pick a `role`; `tone` picks the label colour.
 Text {
-    property string role: "body"        // largeTitle · title · title2 · headline · body · callout · footnote · caption
+    property string role: "body"        // display · numeral · largeTitle · title · title2 · headline · body · callout · footnote · caption
     property string tone: "primary"     // primary · secondary · tertiary
     property bool numeric: false
 
+    // Gauge read-outs: big, heavy, tightly tracked, like a speedometer figure.
     readonly property var scale: ({
+        display: [46, Font.Bold, -1.8], numeral: [30, Font.Bold, -1.0],
         largeTitle: [30, Font.Bold, -0.6], title: [22, Font.Bold, -0.4], title2: [17, Font.DemiBold, -0.2],
         headline: [14, Font.DemiBold, -0.1], body: [13, Font.Normal, 0], callout: [12, Font.Normal, 0],
         footnote: [11, Font.Medium, 0], caption: [10, Font.Medium, 0.1]

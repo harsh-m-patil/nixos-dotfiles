@@ -1,41 +1,44 @@
 ---
 name: quickshell-screenshot
 description: >-
-  Screenshots quickshell bar popups (F1 stats, clock, etc.) forced open in a
-  throwaway config copy, so you can see layout changes yourself. Use when
-  editing ~/nixos-dotfiles/config/quickshell and you need to verify or inspect
-  how a popup or tab renders.
+  Screenshots quickshell bar popups and the F1 hub forced open in a throwaway
+  config copy, so you can see layout changes yourself. Use when editing
+  ~/nixos-dotfiles/config/quickshell and you need to verify or inspect how a
+  popup, island or hub page renders.
 ---
 
 # Quickshell screenshots
 
-Popups only show on hover, so `shot.sh` copies the config to `/tmp/qs-shot`, rewrites `BarPopup.wanted` so the popup is always open, tags the trigger component's root item, runs a second `qs` instance for ~14s, and captures it with `grim`. The live daemon and the real config are not touched.
+Both scripts copy the config to `/tmp`, patch the copy so the UI is forced open, run a second `qs` instance for ~16s, capture it with `grim`, and print QML errors from that instance. The live daemon and the real config are not touched.
 
-## Steps
+## F1 hub (expanded F1 island)
 
-1. Run the script with the component whose root item is the popup's `trigger`:
+```bash
+~/nixos-dotfiles/.agents/skills/quickshell-screenshot/hub.sh <page> /tmp/h<page>.png ["x,y WxH"]
+```
 
-   ```bash
-   ~/nixos-dotfiles/.agents/skills/quickshell-screenshot/shot.sh F1Chip.qml /tmp/shot.png "380,40 1100x620"
-   ```
+Pages: 0 Overview, 1 Results, 2 Standings, 3 Circuit, 4 Season. `hub.sh` sets `F1Hub.open`, `screen` (focused monitor) and `page` in the copy. The default crop `650,0 890x700` frames the hub on the 1920×1080 eDP-1; the island sits under the F1 chip, not centred on screen.
 
-   Pass `-e 'sed expr'` (repeatable) to tweak the trigger file in the copy, e.g. to pin a tab. F1 popup:
+## Bar popups
 
-   ```bash
-   shot.sh F1Chip.qml /tmp/shot2.png "380,40 1100x620" \
-     -e 's/^    property int page: 0/    property int page: 2/' \
-     -e 's/running: popup.wanted \&\& !popup.hovered/running: false/'
-   ```
+```bash
+~/nixos-dotfiles/.agents/skills/quickshell-screenshot/shot.sh <Trigger.qml> /tmp/shot.png ["x,y WxH"] [-e 'sed expr' ...]
+```
 
-   F1 pages: 0 Weekend, 1 Circuit, 2 Last Race, 3 Standings. The second `-e` stops autoplay from switching tabs.
+The trigger is the component whose root item is the popup's `trigger`. `shot.sh` rewrites `BarPopup.wanted` so only that popup is open. `-e` tweaks the trigger file in the copy (repeatable). It does **not** open the F1 hub; use `hub.sh` for that.
 
-2. Read the PNG with the Read tool. Any QML errors from the test instance are printed before `saved …`.
+Read the PNG with the Read tool afterwards.
 
-**Done when:** the image shows the intended popup and tab and no QML errors were printed.
+**Done when:** the image shows the intended view and no QML errors were printed.
 
 ## Gotchas
 
-- **Stale capture:** if the image shows the wrong tab or popup, the previous test instance was still fading out. Rerun; the script already waits between runs.
-- **Geometry:** the F1 popup sits around `380,40 1100x620` on this monitor. Shoot the full screen (omit geometry) first if unsure, then crop.
-- **Hover artifacts:** the real cursor can highlight rows under it; ignore or move the mouse.
+- **Blank page = load error.** If a hub page or popup renders empty, a QML error killed that file. Errors that only warn don't stop the screenshot, so read the printed log lines. Seen in practice:
+  - `Cannot override FINAL property`: a custom property named like a built-in (`top`, `left`, `width`…). Rename it.
+  - `Duplicate property name` / `Property value set multiple times`: usually a scripted edit left an old line behind.
+- **Noise:** `IslandClickMask … Cannot read property 'width' of null` is pre-existing in the test instance; `hub.sh` filters it.
+- **Nested layouts fill by default.** A `RowLayout`/`ColumnLayout` inside a `ColumnLayout` gets `fillHeight` implicitly; set `Layout.fillHeight: false` on fixed-height rows or they steal space and collapse siblings.
+- **Check data before blaming layout.** When a list looks cut off or short, log it: add `console.log("QSDBG", …)` (the scripts print `QSDBG` lines), then remove it. The cache may simply hold fewer rows.
+- **Stale capture:** if the image shows the previous state, the earlier instance was still fading out. Rerun.
+- **Hover artifacts:** the real cursor can highlight rows or open other islands in the shot; ignore them.
 - **Live reload:** after editing the real config, restart the daemon with `quickshell -d -p ~/nixos-dotfiles/config/quickshell`. `pkill -f "quickshell -d -p"` also kills the shell running it, so start the daemon in a separate command.
