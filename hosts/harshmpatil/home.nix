@@ -1,8 +1,6 @@
 { pkgs, ... }:
 
 {
-	home.username = "harshmpatil";
-	home.homeDirectory = "/home/harshmpatil";
 	home.stateVersion = "25.05";
 	home.file = {
 		".zshrc".source = ../../config/.zshrc;
@@ -96,10 +94,39 @@
 	};
 
 	home.packages = with pkgs; [
+		# editors & terminal
+		neovim
+		kitty
+		zoxide
+		chafa
+		btop
 		sesh
 		fzf # provides fzf-tmux
 		fd
+		ripgrep
+
+		# development (rustup provides cargo, rustc and rust-analyzer)
+		gnumake
+		gcc
+		tree-sitter
+		rustup
+		nodejs
+		pnpm
+		gh
+
+		# AI / editors
+		code-cursor
+		cursor-cli
+		opencode
+		t3code
 		(callPackage ../../packages/grok-bot { })
+
+		# desktop & media
+		chromium
+		mpv
+		ffmpeg
+		hyprpaper
+		pulseaudio # pactl
 	];
 
 	# shared-mime-info uses video/matroska for .mkv; mpv.desktop only lists video/x-matroska.

@@ -2,7 +2,7 @@
 	description = "Hyprland + Quickshell desktop for NixOS";
 
 	inputs = {
-		nixpkgs.url = "nixpkgs/nixos-unstable";
+		nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 		home-manager = {
 			url = "github:nix-community/home-manager";
 			inputs.nixpkgs.follows = "nixpkgs";
@@ -13,7 +13,7 @@
 		};
 	};
 
-	outputs = { self, nixpkgs, home-manager, quickshell, ... }:
+	outputs = inputs@{ self, nixpkgs, home-manager, quickshell, ... }:
 		let
 			lib = nixpkgs.lib;
 
@@ -26,6 +26,7 @@
 				let host = import ./hosts/${name}/host.nix;
 				in lib.nixosSystem {
 					system = host.system or "x86_64-linux";
+					specialArgs = { inherit inputs; };
 					modules = [
 						self.nixosModules.default
 						home-manager.nixosModules.home-manager
@@ -37,17 +38,27 @@
 								useGlobalPkgs = true;
 								useUserPackages = true;
 								backupFileExtension = "backup";
-								users.${host.user}.imports = [
-									self.homeManagerModules.default
-									./hosts/${name}/home.nix
-								];
+								extraSpecialArgs = { inherit inputs; };
+								users.${host.user} = {
+									imports = [
+										self.homeManagerModules.default
+										./hosts/${name}/home.nix
+									];
+									home.username = host.user;
+									home.homeDirectory = "/home/${host.user}";
+								};
 							};
 						}
 					];
 				};
 		in
 		{
-			nixosModules.default = ./modules/nixos.nix;
+			nixosModules.default = {
+				imports = [ ./modules/nixos.nix ];
+				# `nix shell nixpkgs#foo` and <nixpkgs> resolve to the nixpkgs the system was built from.
+				nix.registry.nixpkgs.flake = nixpkgs;
+				nix.nixPath = [ "nixpkgs=${nixpkgs}" ];
+			};
 
 			homeManagerModules.default = { lib, pkgs, ... }: {
 				imports = [ ./modules/home.nix ];
@@ -61,5 +72,8 @@
 			};
 
 			nixosConfigurations = lib.genAttrs hostNames mkHost;
+
+			formatter = lib.genAttrs [ "x86_64-linux" "aarch64-linux" ]
+				(system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
 		};
 }

@@ -12,9 +12,6 @@ let
   home = config.home.homeDirectory;
   sessionVariables = {
     DOTFILES = cfg.path;
-    GTK_THEME = "Adwaita-dark";
-    GTK_APPLICATION_PREFER_DARK_THEME = "1";
-    QT_QPA_PLATFORMTHEME = "gtk3";
   };
 in
 {

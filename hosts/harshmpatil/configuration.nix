@@ -3,22 +3,21 @@
 {
   imports = [ ./hardware-configuration.nix ];
 
-  boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot = {
+    enable = true;
+    configurationLimit = 10;
+  };
   boot.loader.efi.canTouchEfiVariables = true;
 
   system.stateVersion = "26.11";
 
-  networking.wireless.enable = true; # wpa_supplicant
   time.timeZone = "Asia/Kolkata";
   i18n.defaultLocale = "en_IN";
 
   users.users.harshmpatil.description = "harshmpatil";
 
   services = {
-    xserver = {
-      enable = true;
-      xkb.layout = "us";
-    };
+    xserver.enable = true;
     desktopManager.gnome.enable = true;
     printing.enable = true;
   };
@@ -32,38 +31,11 @@
   virtualisation.docker.enable = true;
 
   nixpkgs.config.allowUnfree = true;
-  environment.systemPackages = with pkgs; [
-    vim
-    neovim
-    tmux
-    kitty
-    zoxide
-    code-cursor
-    gnumake
-    tree-sitter
-    gcc
-    pulseaudio
-    hyprpaper
-    rustup
-    cargo
-    rust-analyzer
-    chafa
-    opencode
-    mpv
-    ripgrep
-    fd
-    fzf
-    btop
-    cursor-cli
-    ffmpeg
-    chromium
-    nodejs
-    pnpm
-    gh
-    t3code
-  ];
 
-  fonts.packages = with pkgs; [ lilex ];
+  # System-wide fallback editor for root/recovery; user tools live in home.nix.
+  environment.systemPackages = [ pkgs.vim ];
+
+  fonts.packages = [ pkgs.lilex ];
 
   nix.settings.warn-dirty = false;
 }

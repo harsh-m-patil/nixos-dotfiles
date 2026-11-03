@@ -4,7 +4,10 @@
 {
   imports = [ ./hardware-configuration.nix ];
 
-  boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot = {
+    enable = true;
+    configurationLimit = 10;
+  };
   boot.loader.efi.canTouchEfiVariables = true;
 
   time.timeZone = "@TIMEZONE@";
@@ -12,11 +15,10 @@
 
   nixpkgs.config.allowUnfree = true;
 
-  # Your own system packages.
-  environment.systemPackages = with pkgs; [
-    firefox
-    neovim
-  ];
+  programs.firefox.enable = true;
+
+  # Only system-level tools here; user packages go in home.nix.
+  environment.systemPackages = with pkgs; [ vim ];
 
   # Set once at install; do not change after (see `man configuration.nix`).
   system.stateVersion = "@STATE_VERSION@";

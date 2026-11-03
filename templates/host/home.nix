@@ -2,8 +2,7 @@
 
 # Per-user settings. Every option is documented in modules/home.nix (dotfiles.settings).
 {
-  home.username = "@USER@";
-  home.homeDirectory = "/home/@USER@";
+  # home.username / homeDirectory come from host.nix via flake.nix.
   home.stateVersion = "@STATE_VERSION@";
 
   dotfiles.settings = {
@@ -26,5 +25,8 @@
     };
   };
 
-  home.packages = with pkgs; [ ];
+  # Your own packages (user-level tools belong here, not in configuration.nix).
+  home.packages = with pkgs; [
+    neovim
+  ];
 }
