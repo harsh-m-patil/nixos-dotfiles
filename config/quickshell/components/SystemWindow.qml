@@ -96,10 +96,8 @@ FloatingWindow {
             Rectangle {
                 implicitWidth: 34
                 implicitHeight: 34
-                radius: 8
-                color: Theme.alpha(Theme.iris, 0.14)
-                border.width: 1
-                border.color: Theme.alpha(Theme.iris, 0.3)
+                radius: height / 2
+                color: F1Hub.fillStrong
                 Text {
                     anchors.centerIn: parent
                     text: "󰓅"
@@ -198,10 +196,8 @@ FloatingWindow {
                 Layout.rightMargin: 14
                 implicitWidth: privRow.implicitWidth + 20
                 implicitHeight: 26
-                radius: 8
-                color: SystemData.showPrivate ? Theme.alpha(Theme.gold, 0.14) : privHover.hovered ? Theme.surface : "transparent"
-                border.width: 1
-                border.color: SystemData.showPrivate ? Theme.alpha(Theme.gold, 0.35) : Theme.highlightMed
+                radius: height / 2
+                color: SystemData.showPrivate ? Theme.alpha(Theme.gold, 0.22) : privHover.hovered ? F1Hub.fillStrong : F1Hub.fill
                 Behavior on color { ColorAnimation { duration: 150 } }
 
                 HoverHandler { id: privHover; cursorShape: Qt.PointingHandCursor }

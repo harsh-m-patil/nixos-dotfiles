@@ -17,7 +17,6 @@ ColumnLayout {
             font.family: Theme.displayFont
             font.pixelSize: 10
             font.weight: Font.DemiBold
-            font.letterSpacing: 0.4
         }
 
         Text {

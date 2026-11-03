@@ -81,19 +81,16 @@ ColumnLayout {
     component Tag: Text {
         color: F1Hub.ink3
         font.family: Theme.fontFamily
-        font.pixelSize: 9
-        font.weight: Font.Bold
-        font.letterSpacing: 1.6
+        font.pixelSize: 11
+        font.weight: Font.DemiBold
     }
 
     // Trip computer: odometers, the tightest limit as the main fuel gauge, service countdown
     Rectangle {
         Layout.fillWidth: true
         implicitHeight: 116
-        radius: 16
-        color: Theme.alpha(Theme.foreground, 0.03)
-        border.width: 1
-        border.color: F1Hub.hairline
+        radius: 22
+        color: F1Hub.fill
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 18
@@ -128,10 +125,10 @@ ColumnLayout {
             ColumnLayout {
                 spacing: 2
                 Layout.alignment: Qt.AlignVCenter
-                Tag { Layout.alignment: Qt.AlignRight; text: "SERVICE DUE" }
+                Tag { Layout.alignment: Qt.AlignRight; text: "Service due" }
                 Text {
                     Layout.alignment: Qt.AlignRight
-                    text: hub.d.cycleEnd > 0 ? Qt.formatDate(new Date(hub.d.cycleEnd), "MMM d").toUpperCase() : "—"
+                    text: hub.d.cycleEnd > 0 ? Qt.formatDate(new Date(hub.d.cycleEnd), "MMM d") : "—"
                     color: F1Hub.ink
                     font.family: Theme.fontFamily
                     font.pixelSize: 22
@@ -145,7 +142,7 @@ ColumnLayout {
                     font.pixelSize: 10
                 }
                 Item { implicitHeight: 8 }
-                Tag { Layout.alignment: Qt.AlignRight; text: "AVG / DAY" }
+                Tag { Layout.alignment: Qt.AlignRight; text: "Avg per day" }
                 Text {
                     Layout.alignment: Qt.AlignRight
                     text: Fmt.usd(hub.d.days.length ? hub.d.cycle.cost / hub.d.days.length : 0)
@@ -223,10 +220,10 @@ ColumnLayout {
                         rowSpacing: 10
                         Repeater {
                             model: hub.selModel ? [
-                                ["TOKENS", Fmt.tokens(hub.selModel.tokens)],
-                                ["REQUESTS", String(hub.selModel.events)],
-                                ["PER REQUEST", Fmt.usd(hub.selModel.events ? hub.selModel.cost / hub.selModel.events : 0)],
-                                ["PROVIDER", hub.selModel.provider || "—"]
+                                ["Tokens", Fmt.tokens(hub.selModel.tokens)],
+                                ["Requests", String(hub.selModel.events)],
+                                ["Per request", Fmt.usd(hub.selModel.events ? hub.selModel.cost / hub.selModel.events : 0)],
+                                ["Provider", hub.selModel.provider || "—"]
                             ] : []
                             ColumnLayout {
                                 required property var modelData

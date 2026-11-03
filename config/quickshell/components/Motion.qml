@@ -27,9 +27,9 @@ Singleton {
     readonly property int contentScaleMs: reduced ? 0 : 180
 
     function islandFill(compact) {
-        return compact
-            ? Qt.rgba(Theme.background.r, Theme.background.g, Theme.background.b, 1)
-            : Qt.rgba(Theme.background.r, Theme.background.g, Theme.background.b, 0.92)
+        // Near-black with a trace of the theme, like a CarPlay dashboard.
+        const k = 0.35
+        return Qt.rgba(Theme.background.r * k, Theme.background.g * k, Theme.background.b * k, compact ? 1 : 0.96)
     }
 
     // Corner radius follows the live height so corners and size settle together.

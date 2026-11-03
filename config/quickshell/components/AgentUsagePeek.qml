@@ -49,10 +49,8 @@ ColumnLayout {
         visible: peek.tanks.length > 0
         implicitHeight: 112
         Layout.preferredWidth: Math.max(340, peek.tanks.length * 92)
-        radius: 14
-        color: Theme.alpha(Theme.foreground, 0.03)
-        border.width: 1
-        border.color: F1Hub.hairline
+        radius: 22
+        color: F1Hub.fill
         RowLayout {
             anchors.fill: parent
             anchors.margins: 4
@@ -77,12 +75,11 @@ ColumnLayout {
         visible: peek.d.models.length > 0
         spacing: 6
         Text {
-            text: "LEAD"
+            text: "Lead"
             color: F1Hub.ink3
             font.family: Theme.fontFamily
-            font.pixelSize: 9
-            font.weight: Font.Bold
-            font.letterSpacing: 1.6
+            font.pixelSize: 11
+            font.weight: Font.DemiBold
         }
         Text {
             Layout.fillWidth: true

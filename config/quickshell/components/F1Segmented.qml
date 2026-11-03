@@ -12,7 +12,7 @@ Rectangle {
 
     implicitWidth: row.implicitWidth + 6
     implicitHeight: 30
-    radius: 9
+    radius: height / 2
     color: F1Hub.fill
 
     Rectangle {
@@ -21,12 +21,10 @@ Rectangle {
         y: 3
         width: target ? target.width : 0
         height: parent.height - 6
-        radius: 7
-        color: F1Hub.fillStrong
-        border.width: 1
-        border.color: F1Hub.fillStrong
-        Behavior on x { SpringAnimation { spring: 4; damping: 0.38; epsilon: 0.25 } }
-        Behavior on width { SpringAnimation { spring: 4; damping: 0.38; epsilon: 0.25 } }
+        radius: height / 2
+        color: Theme.foreground
+        Behavior on x { SpringAnimation { spring: 5; damping: 1.0; epsilon: 0.25 } }
+        Behavior on width { SpringAnimation { spring: 5; damping: 1.0; epsilon: 0.25 } }
     }
 
     Row {
@@ -49,6 +47,7 @@ Rectangle {
                         text: parent.parent.modelData
                         role: "footnote"
                         tone: parent.parent.index === seg.current ? "primary" : "secondary"
+                        color: parent.parent.index === seg.current ? Theme.background : F1Hub.ink2
                         font.weight: parent.parent.index === seg.current ? Font.DemiBold : Font.Medium
                     }
                     F1Text {

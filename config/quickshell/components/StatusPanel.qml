@@ -46,7 +46,7 @@ ColumnLayout {
     readonly property var scales: ["1", "1.25", "1.5", "1.6", "1.75", "2"]
     readonly property int activeScale: display ? scales.findIndex(s => Math.abs(display.scale - Number(s)) < 0.01) : -1
     readonly property var layouts: [["Extend", "extend"], ["Mirror", "mirror"], ["External only", "secondary"]]
-    readonly property var profiles: [["ECO", "power-saver"], ["BAL", "balanced"], ["PERF", "performance"]]
+    readonly property var profiles: [["Eco", "power-saver"], ["Balanced", "balanced"], ["Performance", "performance"]]
 
     // Navigable rows, top to bottom.
     readonly property var rows: {
@@ -91,11 +91,10 @@ ColumnLayout {
     }
 
     component HudLabel: Text {
-        color: F1Hub.ink3
-        font.family: Theme.fontFamily
-        font.pixelSize: 10
-        font.weight: Font.Bold
-        font.letterSpacing: 1.6
+        color: F1Hub.ink2
+        font.family: Theme.displayFont
+        font.pixelSize: 11
+        font.weight: Font.DemiBold
     }
     component HudSection: ColumnLayout {
         property string title
@@ -106,12 +105,18 @@ ColumnLayout {
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
-            HudLabel { text: parent.parent.title.toUpperCase() }
-            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: F1Hub.hairline }
+            Text {
+                text: parent.parent.title
+                color: F1Hub.ink
+                font.family: Theme.displayFont
+                font.pixelSize: 14
+                font.weight: Font.Bold
+            }
+            Item { Layout.fillWidth: true }
             HudLabel {
                 text: parent.parent.detail
                 visible: text !== ""
-                font.letterSpacing: 0.4
+                color: F1Hub.ink3
                 font.weight: Font.Medium
                 Layout.maximumWidth: 260
                 elide: Text.ElideRight
@@ -128,45 +133,49 @@ ColumnLayout {
             Layout.fillWidth: true
             spacing: 2
             Text {
-                text: (SystemData.info.host || "Control Center").toUpperCase()
+                text: SystemData.info.host || "Control Center"
                 color: F1Hub.ink
-                font.family: Theme.fontFamily
-                font.pixelSize: 14
+                font.family: Theme.displayFont
+                font.pixelSize: 20
                 font.weight: Font.Bold
-                font.letterSpacing: 2.4
+                font.letterSpacing: -0.3
             }
             HudLabel {
                 text: [
-                    SystemData.s.up ? "UP " + Fmt.uptime(SystemData.s.up) : "",
-                    SystemData.s.procs ? SystemData.s.procs + " PROCS" : "",
-                    SystemData.s.governor ? String(SystemData.s.governor).toUpperCase() : ""
+                    SystemData.s.up ? "Up " + Fmt.uptime(SystemData.s.up) : "",
+                    SystemData.s.procs ? SystemData.s.procs + " processes" : "",
+                    SystemData.s.governor ? String(SystemData.s.governor).replace(/^./, c => c.toUpperCase()) : ""
                 ].filter(x => x).join("  ·  ")
-                font.letterSpacing: 0.8
+                color: F1Hub.ink3
                 font.weight: Font.Medium
                 visible: text !== ""
             }
         }
-        Row {
-            spacing: 2
+        Rectangle {
             visible: !!SystemData.s.profile
+            implicitWidth: profRow.implicitWidth + 4
+            implicitHeight: 28
+            radius: 14
+            color: F1Hub.fill
+        Row {
+            id: profRow
+            anchors.centerIn: parent
+            spacing: 0
             Repeater {
                 model: panel.profiles
                 Rectangle {
                     required property var modelData
                     readonly property bool active: SystemData.s.profile === modelData[1]
-                    width: gear.implicitWidth + 14; height: 22; radius: 6
+                    width: gear.implicitWidth + 20; height: 24; radius: 12
                     scale: profPress.pressed ? 0.96 : 1
                     Behavior on scale { NumberAnimation { duration: 80; easing.type: Easing.OutCubic } }
-                    color: active ? Theme.alpha(Theme.iris, profPress.pressed ? 0.22 : 0.16)
-                        : profPress.pressed ? F1Hub.fillStrong : profHover.hovered ? F1Hub.fill : "transparent"
-                    border.width: 1
-                    border.color: active ? Theme.alpha(Theme.iris, 0.5) : F1Hub.hairline
+                    color: active ? Theme.foreground : profHover.hovered ? F1Hub.fill : "transparent"
+                    Behavior on color { ColorAnimation { duration: 160 } }
                     HudLabel {
                         id: gear
                         anchors.centerIn: parent
                         text: parent.modelData[0]
-                        color: parent.active ? Theme.iris : F1Hub.ink3
-                        font.letterSpacing: 1
+                        color: parent.active ? Theme.background : F1Hub.ink2
                     }
                     HoverHandler { id: profHover; cursorShape: Qt.PointingHandCursor }
                     TapHandler {
@@ -176,16 +185,15 @@ ColumnLayout {
                 }
             }
         }
+        }
         Rectangle {
-            implicitWidth: monText.implicitWidth + 20
-            implicitHeight: 26
-            radius: 8
+            implicitWidth: monText.implicitWidth + 24
+            implicitHeight: 28
+            radius: 14
             scale: monPress.pressed ? 0.96 : 1
             Behavior on scale { NumberAnimation { duration: 80; easing.type: Easing.OutCubic } }
-            color: monPress.pressed ? F1Hub.fillStrong : monHover.hovered ? F1Hub.fillStrong : F1Hub.fill
-            border.width: 1
-            border.color: F1Hub.hairline
-            HudLabel { id: monText; anchors.centerIn: parent; text: "󰨇  MONITOR"; color: F1Hub.ink }
+            color: monPress.pressed || monHover.hovered ? F1Hub.fillStrong : F1Hub.fill
+            HudLabel { id: monText; anchors.centerIn: parent; text: "󰨇  Monitor"; color: F1Hub.ink }
             HoverHandler { id: monHover; cursorShape: Qt.PointingHandCursor }
             TapHandler { id: monPress; onTapped: SystemData.windowOpen = true }
         }
@@ -194,11 +202,9 @@ ColumnLayout {
     // Instrument cluster: CPU tach, centre readout, memory dial
     Rectangle {
         Layout.fillWidth: true
-        implicitHeight: 170
-        radius: 18
-        color: Theme.alpha(Theme.foreground, 0.03)
-        border.width: 1
-        border.color: F1Hub.hairline
+        implicitHeight: 178
+        radius: 22
+        color: F1Hub.fill
 
         RowLayout {
             anchors.fill: parent
@@ -223,14 +229,15 @@ ColumnLayout {
                 Layout.bottomMargin: 4
                 spacing: 4
 
-                HudLabel { Layout.alignment: Qt.AlignHCenter; text: "NET ↓" }
+                HudLabel { Layout.alignment: Qt.AlignHCenter; text: "Download" }
                 Text {
                     Layout.alignment: Qt.AlignHCenter
                     text: Fmt.rate(Network.rxRate)
                     color: F1Hub.ink
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 24
+                    font.family: Theme.displayFont
+                    font.pixelSize: 28
                     font.weight: Font.Bold
+                    font.letterSpacing: -0.6
                     font.features: { "tnum": 1 }
                 }
                 HudLabel {
@@ -238,7 +245,6 @@ ColumnLayout {
                     text: "↑ " + Fmt.rate(Network.txRate)
                     color: F1Hub.ink2
                     font.weight: Font.Medium
-                    font.letterSpacing: 0.4
                 }
                 Item { Layout.fillHeight: true }
                 HudBar {
@@ -246,7 +252,7 @@ ColumnLayout {
                     interactive: false
                     segments: 12
                     icon: StatusData.hasBattery ? StatusData.batteryIcon : "󰚥"
-                    label: StatusData.charging ? "CHG" : "BAT"
+                    label: StatusData.charging ? "Chg" : "Bat"
                     value: StatusData.hasBattery ? StatusData.batteryLevel : 1
                     accent: StatusData.batteryLow ? Theme.love : StatusData.charging ? Theme.iris : Theme.gold
                 }
@@ -255,7 +261,7 @@ ColumnLayout {
                     interactive: false
                     segments: 12
                     icon: "󰔏"
-                    label: "TMP"
+                    label: "Temp"
                     value: Math.min(1, (panel.hasGpu ? Math.max(SystemData.temp, SystemData.gpuTemp) : SystemData.temp) / 100)
                     accent: Theme.iris
                     warnAbove: 0.8
@@ -337,7 +343,7 @@ ColumnLayout {
     HudSection {
         visible: panel.temps.length > 0 || SystemData.fans.length > 0
         title: "Thermals"
-        detail: SystemData.fans.length ? (SystemData.fans.some(f => f > 0) ? "FANS ACTIVE" : "FANS IDLE") : ""
+        detail: SystemData.fans.length ? (SystemData.fans.some(f => f > 0) ? "Fans active" : "Fans idle") : ""
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
@@ -349,11 +355,9 @@ ColumnLayout {
                     readonly property color tone: modelData.c >= 85 ? Theme.love : modelData.c >= 70 ? Theme.gold : Theme.iris
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
-                    implicitHeight: 48
-                    radius: 10
-                    color: "transparent"
-                    border.width: 1
-                    border.color: F1Hub.hairline
+                    implicitHeight: 52
+                    radius: F1Hub.tileRadius
+                    color: F1Hub.fill
                     Rectangle {
                         anchors { left: parent.left; bottom: parent.bottom; margins: 6 }
                         width: 3; radius: 1.5
@@ -364,12 +368,12 @@ ColumnLayout {
                     Column {
                         anchors { left: parent.left; leftMargin: 15; verticalCenter: parent.verticalCenter }
                         spacing: 1
-                        HudLabel { text: parent.parent.modelData.name.toUpperCase() }
+                        HudLabel { text: parent.parent.modelData.name }
                         Text {
                             text: Math.round(parent.parent.modelData.c) + "°"
                             color: parent.parent.tone
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 16
+                            font.family: Theme.displayFont
+                            font.pixelSize: 18
                             font.weight: Font.Bold
                             font.features: { "tnum": 1 }
                         }
@@ -384,11 +388,9 @@ ColumnLayout {
                     readonly property bool spinning: modelData > 0
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
-                    implicitHeight: 48
-                    radius: 10
-                    color: spinning ? Theme.alpha(Theme.iris, 0.08) : "transparent"
-                    border.width: 1
-                    border.color: spinning ? Theme.alpha(Theme.iris, 0.35) : F1Hub.hairline
+                    implicitHeight: 52
+                    radius: F1Hub.tileRadius
+                    color: F1Hub.fill
                     Text {
                         id: blade
                         anchors { left: parent.left; leftMargin: 9; verticalCenter: parent.verticalCenter }
@@ -405,11 +407,11 @@ ColumnLayout {
                     Column {
                         anchors { left: blade.right; leftMargin: 7; verticalCenter: parent.verticalCenter }
                         spacing: 1
-                        HudLabel { text: "FAN " + (parent.parent.index + 1) }
+                        HudLabel { text: "Fan " + (parent.parent.index + 1) }
                         Row {
                             spacing: 2
                             Text {
-                                text: parent.parent.parent.spinning ? parent.parent.parent.modelData : "OFF"
+                                text: parent.parent.parent.spinning ? parent.parent.parent.modelData : "Off"
                                 color: parent.parent.parent.spinning ? F1Hub.ink : F1Hub.ink3
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 16
@@ -419,8 +421,7 @@ ColumnLayout {
                             HudLabel {
                                 anchors.baseline: parent.children[0].baseline
                                 visible: parent.parent.parent.spinning
-                                text: "RPM"
-                                font.letterSpacing: 0.6
+                                text: "rpm"
                             }
                         }
                     }
@@ -432,7 +433,7 @@ ColumnLayout {
     // Telemetry
     HudSection {
         title: "Telemetry"
-        detail: SystemData.load.length ? "LOAD " + SystemData.load.map(l => l.toFixed(2)).join(" ") : ""
+        detail: SystemData.load.length ? "Load " + SystemData.load.map(l => l.toFixed(2)).join(" ") : ""
         GridLayout {
             Layout.fillWidth: true
             columns: panel.hasGpu ? 4 : 3
@@ -449,7 +450,7 @@ ColumnLayout {
             StatusSpark {
                 compact: true
                 Layout.preferredHeight: 46
-                label: "NET"
+                label: "Network"
                 value: Fmt.rate(SystemData.netRx + SystemData.netTx)
                 history: panel.netHistory.length > 1 ? panel.netHistory : Network.history
                 autoscale: true
@@ -458,7 +459,7 @@ ColumnLayout {
             StatusSpark {
                 compact: true
                 Layout.preferredHeight: 46
-                label: "READ"
+                label: "Read"
                 value: Fmt.rate(SystemData.diskRead)
                 history: SystemData.diskReadHistory
                 autoscale: true
@@ -467,7 +468,7 @@ ColumnLayout {
             StatusSpark {
                 compact: true
                 Layout.preferredHeight: 46
-                label: "WRITE"
+                label: "Write"
                 value: Fmt.rate(SystemData.diskWrite)
                 history: SystemData.diskWriteHistory
                 autoscale: true
@@ -486,7 +487,7 @@ ColumnLayout {
             Layout.alignment: Qt.AlignTop
             visible: panel.topCpu.length > 0
             title: "Top"
-            detail: SystemData.diskFraction > 0 ? "DISK " + Math.round(SystemData.diskFraction * 100) + "%" : ""
+            detail: SystemData.diskFraction > 0 ? "Disk " + Math.round(SystemData.diskFraction * 100) + "%" : ""
             Repeater {
                 model: panel.topCpu
                 delegate: RowLayout {
@@ -543,9 +544,9 @@ ColumnLayout {
                         readonly property bool active: modelData.id === StatusData.sink?.id
                         readonly property bool sel: panel.current === "sink" + index
                         Layout.fillWidth: true
-                        implicitHeight: 26
-                        radius: 7
-                        color: active ? Theme.alpha(Theme.iris, 0.1) : sinkHover.hovered ? F1Hub.fill : "transparent"
+                        implicitHeight: 30
+                        radius: 15
+                        color: active ? F1Hub.fillStrong : sinkHover.hovered ? F1Hub.fill : "transparent"
                         border.width: 1
                         border.color: sel ? Theme.alpha(Theme.foreground, 0.6) : "transparent"
                         RowLayout {
@@ -594,17 +595,17 @@ ColumnLayout {
                             readonly property bool active: index === panel.activeScale
                             readonly property bool sel: panel.current === "scale" && index === panel.scaleCol
                             Layout.fillWidth: true
-                            implicitHeight: 24
-                            radius: 6
-                            color: active ? Theme.alpha(Theme.iris, 0.16) : scaleHover.hovered ? F1Hub.fill : "transparent"
-                            border.width: 1
-                            border.color: sel ? Theme.alpha(Theme.foreground, 0.6) : active ? Theme.alpha(Theme.iris, 0.5) : F1Hub.hairline
+                            implicitHeight: 28
+                            radius: 14
+                            color: active ? Theme.foreground : scaleHover.hovered ? F1Hub.fillStrong : F1Hub.fill
+                            border.width: sel ? 1 : 0
+                            border.color: Theme.alpha(Theme.foreground, 0.6)
                             Text {
                                 anchors.centerIn: parent
                                 text: parent.modelData + "×"
-                                color: parent.active ? Theme.iris : F1Hub.ink2
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 10
+                                color: parent.active ? Theme.background : F1Hub.ink2
+                                font.family: Theme.displayFont
+                                font.pixelSize: 11
                                 font.weight: Font.Bold
                             }
                             HoverHandler { id: scaleHover; cursorShape: Qt.PointingHandCursor }
@@ -629,11 +630,11 @@ ColumnLayout {
                     id: trayItem
                     required property var modelData
                     required property int index
-                    width: 32; height: 32; radius: 8
+                    width: 36; height: 36; radius: 18
                     color: panel.current === "tray" && panel.col === index ? Theme.alpha(Theme.iris, 0.16)
-                        : trayArea.containsMouse ? F1Hub.fillStrong : "transparent"
-                    border.width: 1
-                    border.color: panel.current === "tray" && panel.col === index ? Theme.alpha(Theme.foreground, 0.6) : F1Hub.hairline
+                        : trayArea.containsMouse ? F1Hub.fillStrong : F1Hub.fill
+                    border.width: panel.current === "tray" && panel.col === index ? 1 : 0
+                    border.color: Theme.alpha(Theme.foreground, 0.6)
                     IconImage { anchors.centerIn: parent; implicitSize: 16; source: trayItem.modelData.icon }
                     MouseArea {
                         id: trayArea

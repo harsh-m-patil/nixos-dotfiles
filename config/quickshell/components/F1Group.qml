@@ -25,10 +25,8 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
         implicitHeight: body.implicitHeight + group.pad * 2
-        radius: 14
+        radius: F1Hub.tileRadius + 2
         color: F1Hub.fill
-        border.width: 1
-        border.color: F1Hub.fill
 
         ColumnLayout {
             id: body

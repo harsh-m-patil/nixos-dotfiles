@@ -14,8 +14,6 @@ Rectangle {
     radius: 14
     z: 50
     color: hover.hovered ? F1Hub.fillStrong : F1Hub.fill
-    border.width: 1
-    border.color: F1Hub.hairline
     scale: area.pressed ? 0.96 : 1
     Behavior on color { ColorAnimation { duration: 120 } }
     Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutQuint } }

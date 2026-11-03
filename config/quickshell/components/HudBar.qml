@@ -3,7 +3,7 @@ import QtQuick.Layouts
 
 import "."
 
-// An LED-segment level meter. Drag, tap or scroll to set; tapping the glyph runs `iconTapped`.
+// A pill-segment level meter on a filled tile. Drag, tap or scroll to set; tapping the glyph runs `iconTapped`.
 Item {
     id: bar
     property string icon
@@ -24,10 +24,10 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 10
-        color: "transparent"
-        border.width: 1
-        border.color: bar.selected ? Theme.alpha(Theme.foreground, 0.6) : F1Hub.hairline
+        radius: Math.min(height / 2, F1Hub.tileRadius)
+        color: F1Hub.fill
+        border.width: bar.selected ? 1 : 0
+        border.color: Theme.alpha(Theme.foreground, 0.6)
     }
 
     RowLayout {
@@ -37,19 +37,18 @@ Item {
         spacing: 8
         Text {
             text: bar.icon
-            color: bar.dimmed ? F1Hub.ink3 : bar.accent
-            font.family: Theme.fontFamily
-            font.pixelSize: 15
+            color: bar.dimmed ? F1Hub.ink3 : F1Hub.ink
+            font.family: Theme.iconFont
+            font.pixelSize: 14
             TapHandler { onTapped: bar.iconTapped() }
         }
         Text {
-            text: bar.label.toUpperCase()
+            text: bar.label
             color: F1Hub.ink2
-            font.family: Theme.fontFamily
-            font.pixelSize: 10
-            font.weight: Font.Bold
-            font.letterSpacing: 1.4
-            Layout.preferredWidth: 34
+            font.family: Theme.displayFont
+            font.pixelSize: 11
+            font.weight: Font.DemiBold
+            Layout.preferredWidth: 30
         }
         Item {
             id: track
@@ -58,16 +57,16 @@ Item {
             Row {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width
-                spacing: 2
+                spacing: 3
                 Repeater {
                     model: bar.segments
                     Rectangle {
                         required property int index
                         readonly property bool on: index < bar.lit
-                        width: (track.width - (bar.segments - 1) * 2) / bar.segments
-                        height: 12
-                        radius: 2
-                        color: !on ? Theme.alpha(Theme.foreground, 0.07)
+                        width: (track.width - (bar.segments - 1) * 3) / bar.segments
+                        height: Math.min(14, bar.height - 14)
+                        radius: Math.min(width, height) / 2
+                        color: !on ? Theme.alpha(Theme.foreground, 0.1)
                             : bar.dimmed ? F1Hub.ink3
                             : (index + 1) / bar.segments > bar.warnAbove ? Theme.love : bar.accent
                         Behavior on color { enabled: !Motion.reduced; ColorAnimation { duration: 90 } }
@@ -93,7 +92,7 @@ Item {
         Text {
             text: Math.round(bar.value * 100)
             color: bar.dimmed ? F1Hub.ink3 : F1Hub.ink
-            font.family: Theme.fontFamily
+            font.family: Theme.displayFont
             font.pixelSize: 13
             font.weight: Font.Bold
             font.features: { "tnum": 1 }

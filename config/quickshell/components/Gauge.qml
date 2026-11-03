@@ -18,10 +18,8 @@ Rectangle {
 
     Layout.fillWidth: true
     implicitHeight: 128
-    radius: 14
-    color: Theme.surface
-    border.width: 1
-    border.color: Theme.highlightLow
+    radius: F1Hub.tileRadius
+    color: F1Hub.fill
 
     property real shown: value
     Behavior on shown { NumberAnimation { duration: 700; easing.type: Easing.OutCubic } }

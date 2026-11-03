@@ -7,7 +7,7 @@ import "."
 Island {
     visible: titleText.length > 0
     opacity: visible ? 1 : 0
-    color: F1Hub.surface
+    color: Motion.islandFill(true)
     border.color: F1Hub.hairline
 
     readonly property string titleText: {

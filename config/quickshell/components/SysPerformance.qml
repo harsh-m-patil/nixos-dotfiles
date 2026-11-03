@@ -58,10 +58,8 @@ RowLayout {
                 readonly property bool active: page.selected === index
                 Layout.fillWidth: true
                 implicitHeight: 76
-                radius: 10
-                color: active ? Theme.surface : entryHover.hovered ? Theme.alpha(Theme.surface, 0.6) : "transparent"
-                border.width: 1
-                border.color: active ? Theme.highlightMed : "transparent"
+                radius: F1Hub.tileRadius
+                color: active ? F1Hub.fillStrong : entryHover.hovered ? F1Hub.fill : "transparent"
 
                 HoverHandler { id: entryHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: page.selected = entry.index }

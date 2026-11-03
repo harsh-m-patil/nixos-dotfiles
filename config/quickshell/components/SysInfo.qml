@@ -79,9 +79,8 @@ Flickable {
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 76
-            radius: 10
-            border.width: 1
-            border.color: Theme.highlightLow
+            radius: F1Hub.tileRadius
+            border.width: 0
             gradient: Gradient {
                 orientation: Gradient.Horizontal
                 GradientStop { position: 0; color: Qt.tint(Theme.surface, Theme.alpha(Theme.foam, 0.08)) }
@@ -98,9 +97,7 @@ Flickable {
                     implicitWidth: 52
                     implicitHeight: 52
                     radius: 14
-                    color: Theme.alpha(Theme.foam, 0.12)
-                    border.width: 1
-                    border.color: Theme.alpha(Theme.foam, 0.3)
+                    color: Theme.alpha(Theme.foam, 0.16)
                     Text {
                         anchors.centerIn: parent
                         text: "󱄅"

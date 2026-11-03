@@ -47,7 +47,8 @@ hl.layer_rule({
     name         = "blur-quickshell-f1",
     match        = { namespace = "^quickshell-f1$" },
     blur         = true,
-    ignore_alpha = 0.3,
+    -- Above IslandBackdrop's 0.42 dim, so only the island itself is blurred.
+    ignore_alpha = 0.5,
 })
 
 hl.window_rule({

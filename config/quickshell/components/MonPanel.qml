@@ -18,10 +18,8 @@ Rectangle {
     Layout.fillWidth: true
     Layout.alignment: Qt.AlignTop
     implicitHeight: body.implicitHeight + padding * 2
-    radius: 10
-    color: Theme.surface
-    border.width: 1
-    border.color: Theme.highlightLow
+    radius: F1Hub.tileRadius
+    color: F1Hub.fill
 
     ColumnLayout {
         id: body

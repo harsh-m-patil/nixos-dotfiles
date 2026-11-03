@@ -49,10 +49,10 @@ ColumnLayout {
         Rectangle {
             implicitWidth: 300
             implicitHeight: 34
-            radius: 8
-            color: Theme.surface
-            border.width: 1
-            border.color: search.activeFocus ? Theme.alpha(Theme.iris, 0.6) : Theme.highlightLow
+            radius: height / 2
+            color: F1Hub.fill
+            border.width: search.activeFocus ? 1 : 0
+            border.color: Theme.alpha(Theme.foreground, 0.5)
 
             Text {
                 id: searchIcon

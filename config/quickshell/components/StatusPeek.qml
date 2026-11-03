@@ -38,12 +38,11 @@ ColumnLayout {
             spacing: 3
             Text {
                 Layout.alignment: Qt.AlignHCenter
-                text: "NET ↓"
+                text: "Download"
                 color: F1Hub.ink3
                 font.family: Theme.fontFamily
-                font.pixelSize: 9
-                font.weight: Font.Bold
-                font.letterSpacing: 1.6
+                font.pixelSize: 11
+                font.weight: Font.DemiBold
             }
             Text {
                 Layout.alignment: Qt.AlignHCenter
@@ -77,7 +76,7 @@ ColumnLayout {
         HudGauge {
             Layout.preferredWidth: 112
             Layout.preferredHeight: 100
-            label: "MEM"
+            label: "Memory"
             value: SystemData.memFraction
             redline: 0.9
             accent: Theme.foam
@@ -91,7 +90,7 @@ ColumnLayout {
         segments: 16
         interactive: false
         icon: StatusData.batteryIcon
-        label: StatusData.charging ? "CHG" : "BAT"
+        label: StatusData.charging ? "Chg" : "Bat"
         value: StatusData.batteryLevel
         accent: StatusData.batteryLow ? Theme.love : Theme.iris
     }
@@ -99,7 +98,7 @@ ColumnLayout {
         implicitHeight: 30
         segments: 16
         icon: StatusData.volumeIcon
-        label: StatusData.muted ? "MUTE" : "VOL"
+        label: StatusData.muted ? "Mute" : "Vol"
         value: StatusData.volume
         dimmed: StatusData.muted
         onMoved: v => StatusData.setVolume(v)

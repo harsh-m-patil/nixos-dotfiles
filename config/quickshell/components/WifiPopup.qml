@@ -110,10 +110,8 @@ BarPopup {
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 26
-            radius: 8
-            color: root.showSensitive ? Theme.alpha(Theme.gold, 0.14) : sensHover.hovered ? Theme.surface : "transparent"
-            border.width: 1
-            border.color: root.showSensitive ? Theme.alpha(Theme.gold, 0.35) : Theme.highlightMed
+            radius: height / 2
+            color: root.showSensitive ? Theme.alpha(Theme.gold, 0.22) : sensHover.hovered ? F1Hub.fillStrong : F1Hub.fill
             Behavior on color { ColorAnimation { duration: 150 } }
 
             HoverHandler { id: sensHover; cursorShape: Qt.PointingHandCursor }

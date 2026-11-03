@@ -23,9 +23,11 @@ Singleton {
     readonly property color ink: Theme.foreground
     readonly property color ink2: Theme.subtle
     readonly property color ink3: Theme.muted
-    readonly property color fill: Theme.alpha(Theme.foreground, 0.05)
-    readonly property color fillStrong: Theme.alpha(Theme.foreground, 0.1)
-    readonly property color hairline: Theme.alpha(Theme.foreground, 0.08)
+    // CarPlay-style tiles: filled grey on a near-black island, no outlines.
+    readonly property color fill: Theme.alpha(Theme.foreground, 0.07)
+    readonly property color fillStrong: Theme.alpha(Theme.foreground, 0.13)
+    readonly property color hairline: Theme.alpha(Theme.foreground, 0.06)
+    readonly property int tileRadius: 16
 
     function toggle(onScreen) {
         if (open && (!onScreen || onScreen === screen)) { open = false; return }

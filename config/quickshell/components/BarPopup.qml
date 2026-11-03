@@ -59,7 +59,7 @@ PopupWindow {
             visible: popup.framed
             anchors.fill: parent
             radius: 16
-            color: Qt.rgba(Theme.background.r, Theme.background.g, Theme.background.b, 0.97)
+            color: Motion.islandFill(false)
             border.width: 1
             border.color: Theme.highlightMed
         }

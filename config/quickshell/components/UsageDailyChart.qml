@@ -30,10 +30,8 @@ Rectangle {
 
     Layout.fillWidth: true
     implicitHeight: chartHeight
-    radius: 8
-    color: Qt.rgba(Theme.background.r, Theme.background.g, Theme.background.b, 0.55)
-    border.width: 1
-    border.color: Theme.highlightLow
+    radius: F1Hub.tileRadius
+    color: F1Hub.fill
 
     Text {
         id: heading
@@ -188,7 +186,7 @@ Rectangle {
         Text {
             visible: root.count > 2 && root.days[Math.floor((root.count - 1) / 2)]
             text: (root.count > 2 && root.days[Math.floor((root.count - 1) / 2)])
-                ? Fmt.dayShort(root.days[Math.floor((root.count - 1) / 2)].day).toUpperCase()
+                ? Fmt.dayShort(root.days[Math.floor((root.count - 1) / 2)].day)
                 : ""
             color: Theme.muted
             font.family: Theme.fontFamily
@@ -198,7 +196,7 @@ Rectangle {
         Text {
             visible: root.count > 1 && root.days[root.count - 1]
             text: (root.count > 1 && root.days[root.count - 1])
-                ? Fmt.dayShort(root.days[root.count - 1].day).toUpperCase()
+                ? Fmt.dayShort(root.days[root.count - 1].day)
                 : ""
             color: Theme.muted
             font.family: Theme.fontFamily

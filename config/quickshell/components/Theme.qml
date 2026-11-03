@@ -14,10 +14,11 @@ Singleton {
     property var current: ({})
     property bool pickerOpen: false
     property bool wallPickerOpen: false
-    readonly property string fontFamily: "GeistMono Nerd Font Propo"
+    readonly property string fontFamily: "Geist"
     readonly property string displayFont: "Geist"
+    readonly property string iconFont: "GeistMono Nerd Font Propo"
     readonly property int fontSize: 13
-    readonly property int islandRadius: 10
+    readonly property int islandRadius: 14
     readonly property real islandAlpha: 0.92
 
     function col(key, fallback) {

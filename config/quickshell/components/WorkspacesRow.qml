@@ -205,7 +205,7 @@ Item {
             width: tw
             height: th
             radius: Motion.radius(height, Theme.islandRadius)
-            color: F1Hub.surface
+            color: Motion.islandFill(true)
             border.width: 1
             border.color: F1Hub.hairline
             clip: true
@@ -459,10 +459,8 @@ Item {
                         opacity: 1 - preview.swap * 0.5
                         layer.enabled: preview.swap > 0
                         layer.effect: MultiEffect { blurEnabled: true; blur: preview.swap * 0.25; blurMax: 16 }
-                        radius: 12
+                        radius: F1Hub.tileRadius
                         color: F1Hub.fill
-                        border.width: 1
-                        border.color: F1Hub.hairline
                         clip: true
 
                         Repeater {
