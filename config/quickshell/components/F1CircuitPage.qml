@@ -8,13 +8,12 @@ F1Page {
     readonly property var w: F1Data.weekend
     readonly property var h: F1Data.history
 
-    hints: [["s", "Sectors"], ["d", "Straights"]]
+    hints: [["s", "Sectors"]]
     Component.onCompleted: F1Data.loadHistory()
     Connections { target: F1Data; function onWeekendChanged() { F1Data.loadHistory() } }
 
     function handleKey(e) {
         if (e.key === Qt.Key_S) { map.showSectors = !map.showSectors; return true }
-        if (e.key === Qt.Key_D) { map.showStraights = !map.showStraights; return true }
         return false
     }
 
@@ -24,7 +23,8 @@ F1Page {
 
         F1Group {
             title: page.w?.circuit ?? ""
-            detail: F1Data.track?.corners ? F1Data.track.corners.length + " turns" : ""
+            detail: [F1Data.track?.corners ? F1Data.track.corners.length + " turns" : "",
+                     F1Data.track?.pitLoss ? "pit loss " + F1Data.track.pitLoss.toFixed(1) + "s" : ""].filter(s => s).join(" · ")
             Layout.preferredWidth: 5
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -41,7 +41,7 @@ F1Page {
                 spacing: 12
                 Repeater {
                     model: (F1Data.track?.sectors?.[0] ?? 0) > 0
-                        ? [["Sector 1", Theme.love], ["Sector 2", Theme.foam], ["Sector 3", Theme.gold]] : []
+                        ? [1, 2, 3].map(n => ["Sector " + n, map.sectorColours[n - 1]]) : []
                     Row {
                         required property var modelData
                         spacing: 5
@@ -50,8 +50,6 @@ F1Page {
                         F1Text { text: modelData[0]; role: "caption"; tone: "secondary" }
                     }
                 }
-                Item { Layout.fillWidth: true }
-                F1Text { text: "Straight mode (estimated)"; role: "caption"; tone: "tertiary"; opacity: map.showStraights ? 1 : 0.35 }
             }
         }
 

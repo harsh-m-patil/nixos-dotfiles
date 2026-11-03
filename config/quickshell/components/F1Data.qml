@@ -285,10 +285,9 @@ Singleton {
             if (!m) return
             meeting = { round: w.round, flag: m.country_flag ?? "", circuitKey: m.circuit_key }
             net.fetch("https://api.multiviewer.app/api/v1/circuits/" + m.circuit_key + "/" + w.season, 30 * day, t => {
-                const mini = t.miniSectorsIndexes ?? []
-                const third = Math.round(mini.length / 3)
-                track = { x: t.x, y: t.y, rotation: t.rotation, corners: t.corners,
-                    sectors: [mini[third - 1] ?? 0, mini[third * 2 - 1] ?? 0], straights: findStraights(t) }
+                track = { x: t.x, y: t.y, rotation: t.rotation, corners: t.corners, pitLoss: parseFloat(t.pitLoss?.normal) || 0,
+                    sectors: [0, 0] }
+                loadSectors(m.circuit_key, w.round)
             })
         })
     }
@@ -319,40 +318,37 @@ Singleton {
         })
     }
 
-    // Long gaps between corners, trimmed for exits and braking — an estimate of straight-mode zones.
-    function findStraights(t) {
-        const n = t.x.length
-        const cum = [0]
-        for (let i = 1; i < n; i++)
-            cum.push(cum[i - 1] + Math.hypot(t.x[i] - t.x[i - 1], t.y[i] - t.y[i - 1]))
-        const total = cum[n - 1] + Math.hypot(t.x[0] - t.x[n - 1], t.y[0] - t.y[n - 1])
-        const nearest = (px, py) => {
-            let best = 0, bd = Infinity
-            for (let i = 0; i < n; i++) {
-                const d = (t.x[i] - px) ** 2 + (t.y[i] - py) ** 2
-                if (d < bd) { bd = d; best = i }
-            }
-            return best
-        }
-        const idx = (t.corners ?? []).map(c => nearest(c.trackPosition.x, c.trackPosition.y)).sort((a, b) => a - b)
-        if (idx.length < 2) return []
-        const atDist = d => {
-            d = ((d % total) + total) % total
-            let i = 0
-            while (i < n - 1 && cum[i + 1] <= d) i++
-            return i
-        }
-        const zones = []
-        for (let k = 0; k < idx.length; k++) {
-            const a = cum[idx[k]]
-            let b = cum[idx[(k + 1) % idx.length]]
-            if (b <= a) b += total
-            if (b - a < total * 0.1) continue
-            const s = atDist(a + total * 0.02), e = atDist(b - total * 0.035)
-            if (e >= s) zones.push([s, e])
-            else zones.push([s, n - 1], [0, e])
-        }
-        return zones
+    // Sector boundaries from timing: where a real car was when its lap's S1 and S2 times elapsed,
+    // taken from the most recent completed race at this circuit (OpenF1 shares the outline's coordinates).
+    function loadSectors(circuitKey, round) {
+        const stillCurrent = () => meeting?.round === round && track
+        net.fetch(openf1 + "sessions?circuit_key=" + circuitKey + "&session_name=Race", 7 * day, sessions => {
+            const s = sessions.filter(x => new Date(x.date_end) < new Date()).pop()
+            if (!s || !stillCurrent()) return
+            net.fetch(openf1 + "laps?session_key=" + s.session_key + "&lap_number=10", 365 * day, laps => {
+                const lap = laps.find(l => l.duration_sector_1 > 0 && l.duration_sector_2 > 0 && l.date_start && !l.is_pit_out_lap)
+                if (!lap || !stillCurrent()) return
+                const t0 = new Date(lap.date_start).getTime()
+                const t1 = t0 + lap.duration_sector_1 * 1000, t2 = t1 + lap.duration_sector_2 * 1000
+                const iso = ms => new Date(ms).toISOString().slice(0, 23)
+                net.fetch(openf1 + "location?session_key=" + s.session_key + "&driver_number=" + lap.driver_number
+                          + "&date>=" + iso(t1 - 2000) + "&date<=" + iso(t2 + 2000), 365 * day, loc => {
+                    if (!loc.length || !stillCurrent()) return
+                    const at = ms => loc.reduce((a, b) => Math.abs(new Date(b.date) - ms) < Math.abs(new Date(a.date) - ms) ? b : a)
+                    const t = track
+                    const nearest = p => {
+                        let best = 0, bd = Infinity
+                        for (let i = 0; i < t.x.length; i++) {
+                            const d = (t.x[i] - p.x) ** 2 + (t.y[i] - p.y) ** 2
+                            if (d < bd) { bd = d; best = i }
+                        }
+                        return best
+                    }
+                    const b1 = nearest(at(t1)), b2 = nearest(at(t2))
+                    if (b1 > 0 && b2 > b1) track = Object.assign({}, t, { sectors: [b1, b2] })
+                })
+            })
+        })
     }
 
     // ── Clocks ──────────────────────────────────────────────────
