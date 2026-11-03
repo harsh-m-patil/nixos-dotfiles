@@ -1,14 +1,35 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.dotfiles;
   jsonType = (pkgs.formats.json { }).type;
-  str = default: description: lib.mkOption { type = lib.types.str; inherit default description; };
-  widgetList = default: lib.mkOption {
-    type = lib.types.listOf (lib.types.enum widgets);
-    inherit default;
-  };
-  widgets = [ "workspaces" "windowTitle" "media" "clock" "f1" "agentUsage" "tray" "status" ];
+  str =
+    default: description:
+    lib.mkOption {
+      type = lib.types.str;
+      inherit default description;
+    };
+  widgetList =
+    default:
+    lib.mkOption {
+      type = lib.types.listOf (lib.types.enum widgets);
+      inherit default;
+    };
+  widgets = [
+    "workspaces"
+    "windowTitle"
+    "media"
+    "clock"
+    "f1"
+    "agentUsage"
+    "tray"
+    "status"
+  ];
   home = config.home.homeDirectory;
   sessionVariables = {
     DOTFILES = cfg.path;
@@ -16,7 +37,9 @@ let
 in
 {
   options.dotfiles = {
-    enable = lib.mkEnableOption "the Hyprland + Quickshell desktop config" // { default = true; };
+    enable = lib.mkEnableOption "the Hyprland + Quickshell desktop config" // {
+      default = true;
+    };
 
     path = lib.mkOption {
       type = lib.types.str;
@@ -48,8 +71,15 @@ in
             kbLayout = str "us" "XKB layout, e.g. \"us,de\".";
             kbVariant = str "" "XKB variant.";
             kbOptions = str "" "XKB options, e.g. \"caps:escape\".";
-            naturalScroll = lib.mkOption { type = lib.types.bool; default = false; };
-            sensitivity = lib.mkOption { type = lib.types.number; default = 0; description = "-1.0 to 1.0."; };
+            naturalScroll = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+            };
+            sensitivity = lib.mkOption {
+              type = lib.types.number;
+              default = 0;
+              description = "-1.0 to 1.0.";
+            };
           };
           monitor.scale = lib.mkOption {
             type = lib.types.number;
@@ -66,9 +96,18 @@ in
           };
           wallpapers.dir = str "${home}/Walls" "Wallpaper root; theme pools live in <dir>/f1/<pool>/.";
           bar = {
-            left = widgetList [ "workspaces" "windowTitle" ];
-            center = widgetList [ "media" "clock" ];
-            right = widgetList [ "tray" "status" ];
+            left = widgetList [
+              "workspaces"
+              "windowTitle"
+            ];
+            center = widgetList [
+              "media"
+              "clock"
+            ];
+            right = widgetList [
+              "tray"
+              "status"
+            ];
           };
         };
       };
@@ -77,7 +116,8 @@ in
 
   config = lib.mkIf cfg.enable {
     xdg.configFile."dotfiles/settings.json".text = builtins.toJSON cfg.settings;
-    xdg.configFile."dotfiles/settings.lua".text = "return " + lib.generators.toLua { } cfg.settings + "\n";
+    xdg.configFile."dotfiles/settings.lua".text =
+      "return " + lib.generators.toLua { } cfg.settings + "\n";
 
     home.packages = [
       cfg.quickshellPackage
@@ -147,29 +187,43 @@ in
     '';
 
     # Ghostty and Starship read merged configs; theme fragments live in writable state (see apply-theme.sh).
-    home.activation.assembleThemedConfigs = lib.hm.dag.entryAfter [ "writeBoundary" "stowConfig" "linkGeneration" ] ''
-      export PATH="${lib.makeBinPath (with pkgs; [ jq coreutils gnused gnugrep findutils python3 ])}:$PATH"
-      export DOTFILES="${cfg.path}"
-      export WALLS_DIR="${cfg.settings.wallpapers.dir}"
-      STATE="${home}/.local/state/quickshell"
-      mkdir -p "$STATE"
+    home.activation.assembleThemedConfigs =
+      lib.hm.dag.entryAfter [ "writeBoundary" "stowConfig" "linkGeneration" ]
+        ''
+          export PATH="${
+            lib.makeBinPath (
+              with pkgs;
+              [
+                jq
+                coreutils
+                gnused
+                gnugrep
+                findutils
+                python3
+              ]
+            )
+          }:$PATH"
+          export DOTFILES="${cfg.path}"
+          export WALLS_DIR="${cfg.settings.wallpapers.dir}"
+          STATE="${home}/.local/state/quickshell"
+          mkdir -p "$STATE"
 
-      ${pkgs.bash}/bin/bash "$DOTFILES/scripts/build-themes.sh" \
-        || echo "dotfiles: theme build failed; keeping the previous themes.json"
+          ${pkgs.bash}/bin/bash "$DOTFILES/scripts/build-themes.sh" \
+            || echo "dotfiles: theme build failed; keeping the previous themes.json"
 
-      THEME_ID="${cfg.settings.theme.default}"
-      if [ -f "$STATE/theme-state.json" ]; then
-        THEME_ID="$(jq -r --arg d "$THEME_ID" '.id // $d' "$STATE/theme-state.json" 2>/dev/null || echo "$THEME_ID")"
-      fi
-      if ! jq -e --arg id "$THEME_ID" '.themes[] | select(.id == $id)' "$DOTFILES/config/quickshell/themes.json" >/dev/null 2>&1; then
-        THEME_ID="${cfg.settings.theme.default}"
-      fi
-      APPLY="${home}/.config/quickshell/apply-theme.sh"
-      if [ -x "$APPLY" ]; then
-        "$APPLY" "$THEME_ID" --no-wallpaper >/dev/null 2>&1 \
-          || echo "dotfiles: applying theme $THEME_ID failed"
-      fi
-    '';
+          THEME_ID="${cfg.settings.theme.default}"
+          if [ -f "$STATE/theme-state.json" ]; then
+            THEME_ID="$(jq -r --arg d "$THEME_ID" '.id // $d' "$STATE/theme-state.json" 2>/dev/null || echo "$THEME_ID")"
+          fi
+          if ! jq -e --arg id "$THEME_ID" '.themes[] | select(.id == $id)' "$DOTFILES/config/quickshell/themes.json" >/dev/null 2>&1; then
+            THEME_ID="${cfg.settings.theme.default}"
+          fi
+          APPLY="${home}/.config/quickshell/apply-theme.sh"
+          if [ -x "$APPLY" ]; then
+            "$APPLY" "$THEME_ID" --no-wallpaper >/dev/null 2>&1 \
+              || echo "dotfiles: applying theme $THEME_ID failed"
+          fi
+        '';
 
     home.activation.postSwitchHooks = lib.hm.dag.entryAfter [ "assembleThemedConfigs" ] ''
       DOTFILES="${cfg.path}" ${pkgs.bash}/bin/bash "${cfg.path}/scripts/hook.sh" post-switch \

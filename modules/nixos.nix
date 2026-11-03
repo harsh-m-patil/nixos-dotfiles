@@ -1,11 +1,18 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.dotfiles;
 in
 {
   options.dotfiles = {
-    enable = lib.mkEnableOption "the Hyprland + Quickshell desktop" // { default = true; };
+    enable = lib.mkEnableOption "the Hyprland + Quickshell desktop" // {
+      default = true;
+    };
 
     user = lib.mkOption {
       type = lib.types.str;
@@ -22,7 +29,13 @@ in
   config = lib.mkIf cfg.enable {
     users.users.${cfg.user} = {
       isNormalUser = true;
-      extraGroups = [ "networkmanager" "wheel" "video" "audio" ] ++ cfg.extraGroups;
+      extraGroups = [
+        "networkmanager"
+        "wheel"
+        "video"
+        "audio"
+      ]
+      ++ cfg.extraGroups;
       shell = pkgs.zsh;
     };
 
@@ -77,8 +90,14 @@ in
     ];
 
     nix.settings = {
-      experimental-features = [ "nix-command" "flakes" ];
-      trusted-users = [ "root" "@wheel" ];
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      trusted-users = [
+        "root"
+        "@wheel"
+      ];
       auto-optimise-store = true;
     };
     nix.gc = {

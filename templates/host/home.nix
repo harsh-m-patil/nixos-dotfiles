@@ -19,9 +19,18 @@
       packs = [ "core" ]; # add "f1" for the F1 team themes
     };
     bar = {
-      left = [ "workspaces" "windowTitle" ];
-      center = [ "media" "clock" ]; # optional: "f1"
-      right = [ "tray" "status" ]; # optional: "agentUsage"
+      left = [
+        "workspaces"
+        "windowTitle"
+      ];
+      center = [
+        "media"
+        "clock"
+      ]; # optional: "f1"
+      right = [
+        "tray"
+        "status"
+      ]; # optional: "agentUsage"
     };
   };
 
