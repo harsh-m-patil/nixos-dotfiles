@@ -3,255 +3,284 @@ import QtQuick.Layouts
 
 import "."
 
-ColumnLayout {
+Item {
     id: page
 
     signal showProcesses()
 
     readonly property var d: SystemData
-    readonly property var topProcs: d.topBy("cpu", 4)
+    readonly property var topProcs: d.topBy("cpu", 3)
+    readonly property real gap: 12
+    readonly property real cellW: (width - gap * 5) / 6
+    readonly property real cellH: (height - gap * 2) / 3
 
-    spacing: 12
+    function heatColor(c) { return c > 85 ? Theme.love : c > 70 ? Theme.gold : Theme.foam }
 
-    RowLayout {
+    component Head: RowLayout {
+        id: head
+        property string icon
+        property string label
+        property string trailing
+        property color accent: Theme.subtle
         Layout.fillWidth: true
-        Layout.fillHeight: true
-        spacing: 12
+        spacing: 7
+        Text { text: head.icon; color: head.accent; font.family: Theme.iconFont; font.pixelSize: 13 }
+        Text { text: head.label; color: Theme.subtle; font.family: Theme.displayFont; font.pixelSize: 12; font.weight: Font.Medium }
+        Item { Layout.fillWidth: true }
+        Text { text: head.trailing; color: Theme.foreground; font.family: Theme.displayFont; font.pixelSize: 12; font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
+    }
 
-        MonPanel {
-            title: "Processor"
-            icon: "󰻠"
-            accent: Theme.iris
-            trailing: (page.d.s.governor || "") + "  ·  " + page.d.cores.length + " threads"
-            Layout.preferredWidth: 200
-            Layout.fillHeight: true
+    component Big: Text {
+        color: Theme.foreground
+        font.family: Theme.displayFont
+        font.pixelSize: 40
+        font.weight: Font.DemiBold
+        font.letterSpacing: -1.2
+        font.features: { "tnum": 1 }
+    }
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 28
-                MonValue { value: Math.round(page.d.cpu * 100); unit: "%"; size: 28 }
-                MonStat { Layout.fillWidth: false; label: "Frequency"; value: (page.d.freq[0] / 1000).toFixed(2) + " GHz" }
-                MonStat { Layout.fillWidth: false; label: "Temperature"; value: Fmt.deg(page.d.temp); accent: Fmt.heat(page.d.temp) }
-                MonStat { Layout.fillWidth: false; label: "Load"; value: page.d.load[0].toFixed(2) }
-                Item { Layout.fillWidth: true }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                spacing: 16
-
-                MonChart {
-                    Layout.fillHeight: true
-                implicitHeight: 56
-                    maxValue: 1
-                    topLabel: "100%"
-                    series: [{ values: page.d.cpuHistory, color: Theme.iris }]
-                }
-                MonThreads {
-                    Layout.preferredWidth: Math.max(200, page.d.cores.length * 20)
-                    Layout.fillWidth: false
-                    Layout.fillHeight: true
-                }
-            }
-        }
-
-        MonPanel {
-            title: "Memory"
-            icon: "󰘚"
-            accent: Theme.foam
-            trailing: Fmt.gb(page.d.memTotal) + " installed"
-            Layout.preferredWidth: 100
-            Layout.fillHeight: true
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 28
-                MonValue { value: (page.d.memUsed / 1073741824).toFixed(1); unit: "GB"; size: 28 }
-                MonStat { Layout.fillWidth: false; label: "In use"; value: Math.round(page.d.memFraction * 100) + "%" }
-                Item { Layout.fillWidth: true }
-            }
-            MonChart {
-                Layout.fillHeight: true
-                implicitHeight: 56
-                maxValue: 1
-                topLabel: "100%"
-                series: [{ values: page.d.memHistory, color: Theme.foam }]
-            }
-            MonMemBar {}
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 16
-                MonKey { label: "Used"; value: Fmt.gb(page.d.memUsed); accent: Theme.foam }
-                MonKey { label: "Cache"; value: Fmt.gb(page.d.memCache); accent: Theme.alpha(Theme.foam, 0.35) }
-                Item { Layout.fillWidth: true }
-            }
+    component Track: Rectangle {
+        id: track
+        property real value: 0
+        property color accent: Theme.iris
+        Layout.fillWidth: true
+        implicitHeight: 8
+        radius: height / 2
+        color: Theme.alpha(Theme.foreground, 0.12)
+        Rectangle {
+            height: parent.height
+            radius: parent.radius
+            color: track.accent
+            width: Math.max(height, parent.width * Math.max(0, Math.min(1, track.value)))
+            Behavior on width { NumberAnimation { duration: 480; easing.type: Easing.OutCubic } }
         }
     }
 
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        spacing: 12
+    CarTile {
+        col: 0; row: 0; colSpan: 2; rowSpan: 2
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
 
-        MonPanel {
-            title: "Graphics"
-            icon: "󰢮"
-            accent: Theme.love
-            trailing: Fmt.watts(page.d.num(page.d.s.gpupower))
-            Layout.preferredWidth: 100
-            Layout.fillHeight: true
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 24
-                MonValue { value: Math.round(page.d.gpuBusy * 100); unit: "%"; size: 24 }
-                Item { Layout.fillWidth: true }
-                MonStat { Layout.fillWidth: false; label: "Temperature"; value: Fmt.deg(page.d.gpuTemp); accent: Fmt.heat(page.d.gpuTemp) }
-            }
-            MonChart {
-                Layout.fillHeight: true
-                implicitHeight: 56
-                maxValue: 1
-                topLabel: "100%"
-                series: [{ values: page.d.gpuHistory, color: Theme.love }]
-            }
-            MonMeter {
-                label: "Video memory"
-                value: Fmt.gb(page.d.vram[0] || 0) + " / " + Fmt.gb(page.d.vram[1] || 0)
-                fraction: page.d.vram[1] > 0 ? page.d.vram[0] / page.d.vram[1] : 0
-                accent: Theme.love
-            }
-        }
-
-        MonPanel {
-            title: "Network"
-            icon: "󰖩"
-            accent: Theme.foam
-            trailing: page.d.s.netdev || "offline"
-            Layout.preferredWidth: 100
-            Layout.fillHeight: true
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 28
-                MonRate { label: "Download"; bps: page.d.netRx; accent: Theme.foam }
-                MonRate { label: "Upload"; bps: page.d.netTx; accent: Theme.iris }
-                Item { Layout.fillWidth: true }
-            }
-            MonChart {
-                Layout.fillHeight: true
-                implicitHeight: 56
-                mirrored: true
-                floorValue: 16384
-                topLabel: Fmt.rate(peak)
-                series: [
-                    { values: page.d.netRxHistory, color: Theme.foam },
-                    { values: page.d.netTxHistory, color: Theme.iris }
-                ]
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                MonKey { label: "Received"; value: Fmt.bytes(page.d.nio[0] || 0); accent: Theme.foam }
-                Item { Layout.fillWidth: true }
-                MonKey { label: "Sent"; value: Fmt.bytes(page.d.nio[1] || 0); accent: Theme.iris }
-            }
-        }
-
-        MonPanel {
-            title: "Disk"
-            icon: "󰋊"
+        CarGauge {
+            anchors.fill: parent
+            anchors.margins: 14
+            style: "sweep"
             accent: Theme.gold
-            trailing: "nvme  ·  " + Fmt.deg(page.d.nvmeTemp)
-            Layout.preferredWidth: 100
-            Layout.fillHeight: true
+            value: page.d.cpu
+            text: Math.round(page.d.cpu * 100)
+            unit: "% cpu"
+            caption: page.d.s.governor || ""
+            scaleLabels: ["0", "20", "40", "60", "80", "100"]
+            footer: "󰾆  " + (page.d.freq[0] / 1000).toFixed(2) + " GHz   ·   " + Fmt.deg(page.d.temp)
+        }
+    }
 
+    CarTile {
+        col: 2; row: 0
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
+
+        CarGauge {
+            anchors.fill: parent
+            anchors.margins: 10
+            style: "ring"
+            accent: Theme.foam
+            value: page.d.memFraction
+            text: (page.d.memUsed / 1073741824).toFixed(1)
+            unit: "GB memory"
+            footer: Fmt.pct(page.d.memFraction) + " of " + Fmt.gb(page.d.memTotal)
+        }
+    }
+
+    CarTile {
+        col: 3; row: 0
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
+
+        CarGauge {
+            anchors.fill: parent
+            anchors.margins: 10
+            style: "needle"
+            accent: Theme.love
+            value: page.d.gpuBusy
+            text: Math.round(page.d.gpuBusy * 100)
+            unit: "% gpu"
+            ticks: 30
+            scaleLabels: ["0", "25", "50", "75", "100"]
+            footer: Fmt.deg(page.d.gpuTemp)
+        }
+    }
+
+    CarTile {
+        col: 4; row: 0; colSpan: 2
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 10
+            Head { icon: "󰖩"; label: "Network"; accent: Theme.foam; trailing: page.d.s.netdev || "offline" }
+            CarTicks {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                values: page.d.netRxHistory
+                floorValue: 16384
+                accent: Theme.foam
+            }
+            CarTicks {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 18
+                values: page.d.netTxHistory
+                floorValue: 16384
+                accent: Theme.iris
+            }
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 28
-                MonRate { label: "Read"; bps: page.d.diskRead; accent: Theme.gold }
-                MonRate { label: "Write"; bps: page.d.diskWrite; accent: Theme.rose }
+                Text { text: "↓ " + Fmt.rate(page.d.netRx); color: Theme.foam; font.family: Theme.displayFont; font.pixelSize: 12; font.weight: Font.Medium }
                 Item { Layout.fillWidth: true }
-            }
-            MonChart {
-                Layout.fillHeight: true
-                implicitHeight: 56
-                mirrored: true
-                floorValue: 65536
-                topLabel: Fmt.rate(peak)
-                series: [
-                    { values: page.d.diskReadHistory, color: Theme.gold },
-                    { values: page.d.diskWriteHistory, color: Theme.rose }
-                ]
-            }
-            MonMeter {
-                label: "Root filesystem"
-                value: Fmt.gb(page.d.disk[0]) + " / " + Fmt.gb(page.d.disk[1])
-                fraction: page.d.diskFraction
-                accent: page.d.diskFraction > 0.9 ? Theme.love : Theme.gold
+                Text { text: "↑ " + Fmt.rate(page.d.netTx); color: Theme.iris; font.family: Theme.displayFont; font.pixelSize: 12; font.weight: Font.Medium }
             }
         }
     }
 
-    RowLayout {
-        Layout.fillWidth: true
-        spacing: 12
+    CarTile {
+        col: 2; row: 1
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
 
-        MonPanel {
-            title: "Top processes"
-            icon: "󰐱"
-            accent: Theme.iris
-            trailing: "View all  →"
-            trailingLink: true
-            onTrailingClicked: page.showProcesses()
-            Layout.preferredWidth: 200
-            Layout.fillHeight: true
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: -8
-                spacing: 0
-                MonProcRow { header: true; compact: true }
-                Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Theme.highlightLow }
-                Repeater {
-                    model: 4
-                    MonProcRow {
-                        required property int index
-                        compact: true
-                        p: page.topProcs[index] ?? null
-                        cpuScale: Math.max(0.02, page.topProcs[0]?.cpu ?? 0)
-                    }
-                }
-            }
+        CarGauge {
+            anchors.fill: parent
+            anchors.margins: 22
+            fullCircle: true
+            ticks: 48
+            majorEvery: 12
+            accent: page.heatColor(page.d.temp)
+            value: page.d.temp / 100
+            text: page.d.temp > 0 ? Math.round(page.d.temp) + "°" : "—"
+            unit: "CPU temp"
         }
+    }
 
-        MonPanel {
-            title: "Battery"
-            icon: page.d.charging ? "󰂄" : "󰁹"
-            accent: page.d.batFraction < 0.2 ? Theme.love : Theme.foam
-            trailing: page.d.s.batstatus || ""
-            Layout.preferredWidth: 100
-            Layout.fillHeight: true
+    CarTile {
+        col: 3; row: 1
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
 
-            RowLayout {
+        CarGauge {
+            anchors.fill: parent
+            anchors.margins: 22
+            fullCircle: true
+            ticks: 48
+            majorEvery: 12
+            accent: page.d.batFraction < 0.2 ? Theme.love : page.d.charging ? Theme.gold : Theme.foam
+            value: page.d.batFraction
+            text: Math.round(page.d.batFraction * 100) + "%"
+            unit: page.d.charging ? "󰂄 charging" : Fmt.watts(page.d.num(page.d.s.batpower))
+        }
+    }
+
+    CarTile {
+        col: 4; row: 1; colSpan: 2
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 12
+            Head { icon: "󰋊"; label: "Disk"; accent: Theme.gold; trailing: Fmt.gb(page.d.disk[0]) + " / " + Fmt.gb(page.d.disk[1]) }
+            Item { Layout.fillHeight: true }
+            CarPills {
                 Layout.fillWidth: true
-                spacing: 24
-                MonValue { value: Math.round(page.d.batFraction * 100); unit: "%"; size: 28 }
-                Item { Layout.fillWidth: true }
-                MonStat { Layout.fillWidth: false; label: page.d.charging ? "Charge rate" : "Draw"; value: Fmt.watts(page.d.num(page.d.s.batpower)) }
-                MonStat { Layout.fillWidth: false; label: "Health"; value: page.d.batHealth > 0 ? Math.round(page.d.batHealth * 100) + "%" : "—" }
-            }
-            MonBar {
-                thickness: 6
-                value: page.d.batFraction
-                fill: page.d.batFraction < 0.2 ? Theme.love : Theme.foam
+                Layout.preferredHeight: 34
+                count: 12
+                value: page.d.diskFraction
+                accent: page.d.diskFraction > 0.9 ? Theme.love : Theme.foam
             }
             Item { Layout.fillHeight: true }
-            ColumnLayout {
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: 0
-                MonKV { label: "Power profile"; value: page.d.s.profile || "—" }
-                MonKV { last: true; label: "Charge cycles"; value: page.d.s.batcycles || "—" }
+                Text { text: "Read  " + Fmt.rate(page.d.diskRead); color: Theme.subtle; font.family: Theme.displayFont; font.pixelSize: 12 }
+                Item { Layout.fillWidth: true }
+                Text { text: "Write  " + Fmt.rate(page.d.diskWrite); color: Theme.subtle; font.family: Theme.displayFont; font.pixelSize: 12 }
+            }
+        }
+    }
+
+    CarTile {
+        col: 0; row: 2; colSpan: 2
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 10
+            Head { icon: "󰻠"; label: "Threads"; accent: Theme.iris; trailing: page.d.cores.length + " · " + Fmt.uptime(page.d.s.up) }
+            CarTicks {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                count: Math.max(1, page.d.cores.length)
+                values: page.d.cores
+                maxValue: 1
+                accent: Theme.iris
+            }
+            CarTicks {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 14
+                values: page.d.cpuHistory
+                maxValue: 1
+                count: 64
+                accent: Theme.gold
+            }
+        }
+    }
+
+    CarTile {
+        col: 2; row: 2; colSpan: 2
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 8
+            RowLayout {
+                Layout.fillWidth: true
+                Big { text: page.d.load[0].toFixed(2) }
+                Item { Layout.fillWidth: true }
+                Text { Layout.alignment: Qt.AlignBottom; Layout.bottomMargin: 8; text: "load"; color: Theme.subtle; font.family: Theme.displayFont; font.pixelSize: 12 }
+            }
+            Track { value: page.d.load[0] / Math.max(1, page.d.cores.length); accent: Theme.iris }
+            Item { Layout.fillHeight: true }
+            Head { icon: "󰾴"; label: "Swap"; accent: Theme.rose; trailing: Fmt.gb(page.d.swapUsed) }
+            Track { value: page.d.swapTotal > 0 ? page.d.swapUsed / page.d.swapTotal : 0; accent: Theme.rose }
+        }
+    }
+
+    CarTile {
+        col: 4; row: 2; colSpan: 2
+        cellW: page.cellW; cellH: page.cellH; gap: page.gap
+        pressable: true
+        onClicked: page.showProcesses()
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 10
+            Head { icon: "󰐱"; label: "Top processes"; accent: Theme.gold; trailing: "View all  →" }
+            Item { Layout.fillHeight: true }
+            Repeater {
+                model: 3
+                ColumnLayout {
+                    id: proc
+                    required property int index
+                    readonly property var p: page.topProcs[index] ?? null
+                    Layout.fillWidth: true
+                    spacing: 4
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text { Layout.fillWidth: true; text: proc.p?.name ?? "—"; elide: Text.ElideRight; color: Theme.foreground; font.family: Theme.displayFont; font.pixelSize: 12 }
+                        Text { text: ((proc.p?.cpu ?? 0) * 100).toFixed(1) + "%"; color: Theme.subtle; font.family: Theme.displayFont; font.pixelSize: 12; font.features: { "tnum": 1 } }
+                    }
+                    Track {
+                        implicitHeight: 4
+                        value: (proc.p?.cpu ?? 0) / Math.max(0.02, page.topProcs[0]?.cpu ?? 0)
+                        accent: (proc.p?.cpu ?? 0) > 0.25 ? Theme.gold : Theme.iris
+                    }
+                }
             }
         }
     }

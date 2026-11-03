@@ -110,7 +110,6 @@
   home.packages = with pkgs; [
     # editors & terminal
     neovim
-    kitty
     zoxide
     chafa
     btop

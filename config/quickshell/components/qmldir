@@ -43,6 +43,7 @@ StatBar 1.0 StatBar.qml
 WifiPopup 1.0 WifiPopup.qml
 Gauge 1.0 Gauge.qml
 singleton SystemData 1.0 SystemData.qml
+singleton ConnectivityData 1.0 ConnectivityData.qml
 SystemWindow 1.0 SystemWindow.qml
 MonPanel 1.0 MonPanel.qml
 MonValue 1.0 MonValue.qml
@@ -50,12 +51,17 @@ MonStat 1.0 MonStat.qml
 MonBar 1.0 MonBar.qml
 MonChart 1.0 MonChart.qml
 MonKV 1.0 MonKV.qml
+MonPickRow 1.0 MonPickRow.qml
 MonKey 1.0 MonKey.qml
 MonRate 1.0 MonRate.qml
 MonMeter 1.0 MonMeter.qml
 MonThreads 1.0 MonThreads.qml
 MonMemBar 1.0 MonMemBar.qml
 MonProcRow 1.0 MonProcRow.qml
+CarGauge 1.0 CarGauge.qml
+CarTile 1.0 CarTile.qml
+CarTicks 1.0 CarTicks.qml
+CarPills 1.0 CarPills.qml
 SysOverview 1.0 SysOverview.qml
 SysProcesses 1.0 SysProcesses.qml
 SysPerformance 1.0 SysPerformance.qml

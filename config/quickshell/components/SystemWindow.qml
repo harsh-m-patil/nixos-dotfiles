@@ -11,7 +11,7 @@ FloatingWindow {
     implicitWidth: 1240
     implicitHeight: 780
     minimumSize: Qt.size(1000, 640)
-    color: Theme.background
+    color: Motion.islandFill(false)
     visible: SystemData.windowOpen
     onClosed: SystemData.windowOpen = false
 

@@ -70,6 +70,44 @@ Flickable {
 
     component Spacer: Item { Layout.fillHeight: true }
 
+    component MonoToggle: Rectangle {
+        id: toggle
+        property bool checked: false
+        signal clicked()
+        Layout.fillWidth: true
+        implicitHeight: 28
+        radius: height / 2
+        color: toggleHover.hovered ? Theme.alpha(Theme.foreground, 0.06) : "transparent"
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 2
+            anchors.rightMargin: 8
+            spacing: 8
+            Text {
+                text: "Radio"
+                color: Theme.subtle
+                font.family: Theme.displayFont
+                font.pixelSize: 11
+            }
+            Item { Layout.fillWidth: true }
+            Text {
+                text: toggle.checked ? "On" : "Off"
+                color: toggle.checked ? Theme.foam : Theme.muted
+                font.family: Theme.displayFont
+                font.pixelSize: 11
+                font.weight: Font.DemiBold
+            }
+            Text {
+                text: toggle.checked ? "󰖩" : "󰤭"
+                color: toggle.checked ? Theme.foam : Theme.muted
+                font.family: Theme.fontFamily
+                font.pixelSize: 13
+            }
+        }
+        HoverHandler { id: toggleHover; cursorShape: Qt.PointingHandCursor }
+        TapHandler { onTapped: toggle.clicked() }
+    }
+
     ColumnLayout {
         id: body
         width: page.width
@@ -381,6 +419,144 @@ Flickable {
                     value: "R " + Fmt.rate(page.d.diskRead) + "  ·  W " + Fmt.rate(page.d.diskWrite)
                 }
                 Spacer {}
+            }
+
+            MonPanel {
+                title: "Wi‑Fi"
+                icon: "󰖩"
+                accent: Theme.foam
+                trailing: ConnectivityData.wifiTrailing
+                Layout.preferredWidth: 100
+                Layout.fillHeight: true
+
+                MonoToggle {
+                    checked: ConnectivityData.wifiEnabled
+                    onClicked: ConnectivityData.setWifiEnabled(!ConnectivityData.wifiEnabled)
+                }
+
+                Flickable {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    contentHeight: sysWifiList.implicitHeight
+
+                    ColumnLayout {
+                        id: sysWifiList
+                        width: parent.width
+                        spacing: 0
+
+                        Repeater {
+                            model: ConnectivityData.wifiEnabled ? ConnectivityData.wifiNetworks : []
+                            MonPickRow {
+                                required property var modelData
+                                required property int index
+                                title: modelData.name
+                                detail: ConnectivityData.wifiDetail(modelData)
+                                icon: ConnectivityData.wifiIcon(modelData.signalStrength, true)
+                                active: modelData.connected
+                                last: index === ConnectivityData.wifiNetworks.length - 1
+                                onActivated: ConnectivityData.activateWifi(modelData)
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            visible: !ConnectivityData.wifiAvailable
+                            text: "No Wi‑Fi adapter found"
+                            color: Theme.muted
+                            font.family: Theme.displayFont
+                            font.pixelSize: 11
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            visible: ConnectivityData.wifiAvailable && !ConnectivityData.wifiEnabled
+                            text: "Turn Wi‑Fi on to browse networks"
+                            color: Theme.muted
+                            font.family: Theme.displayFont
+                            font.pixelSize: 11
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            visible: ConnectivityData.wifiEnabled && ConnectivityData.wifiNetworks.length === 0
+                            text: "Scanning for networks…"
+                            color: Theme.muted
+                            font.family: Theme.displayFont
+                            font.pixelSize: 11
+                        }
+                    }
+                }
+            }
+
+            MonPanel {
+                title: "Bluetooth"
+                icon: ConnectivityData.btEnabled ? "󰂯" : "󰂲"
+                accent: Theme.iris
+                trailing: ConnectivityData.btTrailing
+                Layout.preferredWidth: 100
+                Layout.fillHeight: true
+
+                MonoToggle {
+                    checked: ConnectivityData.btEnabled
+                    onClicked: ConnectivityData.setBtEnabled(!ConnectivityData.btEnabled)
+                }
+
+                Flickable {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    contentHeight: sysBtList.implicitHeight
+
+                    ColumnLayout {
+                        id: sysBtList
+                        width: parent.width
+                        spacing: 0
+
+                        Repeater {
+                            model: ConnectivityData.btEnabled ? ConnectivityData.btDevices : []
+                            MonPickRow {
+                                required property var modelData
+                                required property int index
+                                title: ConnectivityData.btLabel(modelData)
+                                detail: ConnectivityData.btDetail(modelData)
+                                icon: modelData.icon || "󰂯"
+                                active: modelData.connected
+                                last: index === ConnectivityData.btDevices.length - 1
+                                onActivated: ConnectivityData.activateBt(modelData)
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            visible: !ConnectivityData.btAvailable
+                            text: "Bluetooth unavailable"
+                            color: Theme.muted
+                            font.family: Theme.displayFont
+                            font.pixelSize: 11
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            visible: ConnectivityData.btAvailable && !ConnectivityData.btEnabled
+                            text: "Turn Bluetooth on to find devices"
+                            color: Theme.muted
+                            font.family: Theme.displayFont
+                            font.pixelSize: 11
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            visible: ConnectivityData.btEnabled && ConnectivityData.btDevices.length === 0
+                            text: ConnectivityData.btAdapter?.discovering ? "Scanning for devices…" : "No devices nearby"
+                            color: Theme.muted
+                            font.family: Theme.displayFont
+                            font.pixelSize: 11
+                        }
+                    }
+                }
             }
 
             MonPanel {

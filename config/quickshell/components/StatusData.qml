@@ -21,7 +21,15 @@ Singleton {
         screen = onScreen || Hyprland.focusedMonitor?.name || Quickshell.screens[0]?.name || ""
         open = true
     }
-    onOpenChanged: if (open) { readRadio(); MonitorData.refresh() }
+    onOpenChanged: {
+        if (open) {
+            readRadio()
+            MonitorData.refresh()
+        } else {
+            ConnectivityData.ccWifiOpen = false
+            ConnectivityData.ccBtOpen = false
+        }
+    }
 
     // Audio
     readonly property var sink: Pipewire.defaultAudioSink

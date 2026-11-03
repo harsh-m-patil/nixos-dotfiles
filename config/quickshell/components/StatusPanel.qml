@@ -288,14 +288,26 @@ ColumnLayout {
             icon: StatusData.wifiIcon; label: "Wi-Fi"; detail: StatusData.wifiDetail
             on: StatusData.wifiOn
             selected: panel.current === "tiles" && panel.col === 0
+            expandable: true
+            expanded: ConnectivityData.ccWifiOpen
             onActivated: StatusData.toggleWifi()
+            onExpandToggled: {
+                ConnectivityData.ccBtOpen = false
+                ConnectivityData.ccWifiOpen = !ConnectivityData.ccWifiOpen
+            }
         }
         HudTelltale {
             icon: StatusData.btOn ? "󰂯" : "󰂲"; label: "Bluetooth"; detail: StatusData.btDetail
             on: StatusData.btOn
             accent: Theme.iris
             selected: panel.current === "tiles" && panel.col === 1
+            expandable: true
+            expanded: ConnectivityData.ccBtOpen
             onActivated: StatusData.toggleBluetooth()
+            onExpandToggled: {
+                ConnectivityData.ccWifiOpen = false
+                ConnectivityData.ccBtOpen = !ConnectivityData.ccBtOpen
+            }
         }
         HudTelltale {
             icon: StatusData.micMuted ? "󰍭" : "󰍬"; label: "Mic"
@@ -313,6 +325,120 @@ ColumnLayout {
             accent: StatusData.batteryLow ? Theme.love : Theme.iris
             selected: panel.current === "tiles" && panel.col === 3
             onActivated: SystemData.windowOpen = true
+        }
+    }
+
+    RowLayout {
+        visible: ConnectivityData.ccWifiOpen || ConnectivityData.ccBtOpen
+        Layout.fillWidth: true
+        spacing: 10
+
+        HudSection {
+            visible: ConnectivityData.ccWifiOpen
+            Layout.fillWidth: true
+            Layout.preferredWidth: 1
+            title: "Wi‑Fi"
+            detail: ConnectivityData.wifiTrailing
+
+            Flickable {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 160
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                contentHeight: wifiPickCol.implicitHeight
+
+                ColumnLayout {
+                    id: wifiPickCol
+                    width: parent.width
+                    spacing: 0
+
+                    Repeater {
+                        model: ConnectivityData.wifiEnabled ? ConnectivityData.wifiNetworks : []
+                        MonPickRow {
+                            required property var modelData
+                            required property int index
+                            title: modelData.name
+                            detail: ConnectivityData.wifiDetail(modelData)
+                            icon: ConnectivityData.wifiIcon(modelData.signalStrength, true)
+                            active: modelData.connected
+                            last: index === ConnectivityData.wifiNetworks.length - 1
+                            onActivated: ConnectivityData.activateWifi(modelData)
+                        }
+                    }
+                    HudLabel {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 6
+                        visible: !ConnectivityData.wifiAvailable
+                        text: "No Wi‑Fi adapter"
+                    }
+                    HudLabel {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 6
+                        visible: ConnectivityData.wifiAvailable && !ConnectivityData.wifiEnabled
+                        text: "Turn Wi‑Fi on above"
+                    }
+                    HudLabel {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 6
+                        visible: ConnectivityData.wifiEnabled && ConnectivityData.wifiNetworks.length === 0
+                        text: "Scanning…"
+                    }
+                }
+            }
+        }
+
+        HudSection {
+            visible: ConnectivityData.ccBtOpen
+            Layout.fillWidth: true
+            Layout.preferredWidth: 1
+            title: "Bluetooth"
+            detail: ConnectivityData.btTrailing
+
+            Flickable {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 160
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                contentHeight: btPickCol.implicitHeight
+
+                ColumnLayout {
+                    id: btPickCol
+                    width: parent.width
+                    spacing: 0
+
+                    Repeater {
+                        model: ConnectivityData.btEnabled ? ConnectivityData.btDevices : []
+                        MonPickRow {
+                            required property var modelData
+                            required property int index
+                            title: ConnectivityData.btLabel(modelData)
+                            detail: ConnectivityData.btDetail(modelData)
+                            icon: modelData.icon || "󰂯"
+                            active: modelData.connected
+                            last: index === ConnectivityData.btDevices.length - 1
+                            onActivated: ConnectivityData.activateBt(modelData)
+                        }
+                    }
+                    HudLabel {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 6
+                        visible: !ConnectivityData.btAvailable
+                        text: "Unavailable"
+                    }
+                    HudLabel {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 6
+                        visible: ConnectivityData.btAvailable && !ConnectivityData.btEnabled
+                        text: "Turn Bluetooth on above"
+                    }
+                    HudLabel {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 6
+                        visible: ConnectivityData.btEnabled && ConnectivityData.btDevices.length === 0
+                        text: ConnectivityData.btAdapter?.discovering ? "Scanning…" : "No devices"
+                    }
+                }
+            }
         }
     }
 
