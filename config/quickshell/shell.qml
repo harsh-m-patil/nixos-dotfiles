@@ -11,10 +11,7 @@ ShellRoot {
         target: "bar"
 
         function toggle(): void {
-            for (let i = 0; i < barScope.bars.length; i++) {
-                const win = barScope.bars[i]
-                win.barVisible = !win.barVisible
-            }
+            barScope.setVisible(!barScope.visible)
         }
     }
 
@@ -94,6 +91,43 @@ ShellRoot {
     QtObject {
         id: barScope
         property var bars: []
+        property bool visible: true
+
+        function dismissIslands(): void {
+            ClockHub.open = false
+            F1Hub.open = false
+            Media.open = false
+            StatusData.open = false
+            WorkspacesData.open = false
+            AgentUsageData.open = false
+            if (Motion.owner)
+                Motion.owner.hoverPeek = false
+            Motion.owner = null
+            Motion.release()
+        }
+
+        function setVisible(on: bool): void {
+            if (!on)
+                dismissIslands()
+            visible = on
+            if (on)
+                barRelayout.restart()
+        }
+    }
+
+    Timer {
+        id: barRelayout
+        interval: 0
+        onTriggered: {
+            BarLayout.bump()
+            barRelayoutFollow.restart()
+        }
+    }
+
+    Timer {
+        id: barRelayoutFollow
+        interval: 50
+        onTriggered: BarLayout.bump()
     }
 
     Variants {
@@ -105,8 +139,10 @@ ShellRoot {
 
             screen: modelData
             WlrLayershell.namespace: "quickshell-bar"
-            property bool barVisible: true
-            visible: barVisible
+            visible: barScope.visible
+
+            onVisibleChanged: if (visible)
+                barRelayout.restart()
 
             anchors {
                 top: true
@@ -121,7 +157,7 @@ ShellRoot {
             }
 
             implicitHeight: 28
-            exclusiveZone: implicitHeight + margins.top
+            exclusiveZone: barScope.visible ? implicitHeight + margins.top : 0
             color: "transparent"
 
             Component.onCompleted: {

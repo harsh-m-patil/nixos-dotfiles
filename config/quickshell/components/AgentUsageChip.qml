@@ -20,9 +20,11 @@ Item {
     readonly property var barWindow: QsWindow.window
     readonly property string screenName: barWindow?.screen?.name ?? ""
     readonly property point origin: {
-        void x; void width; void parent?.x; void parent?.parent?.x; void parent?.parent?.width
-        const p = mapToItem(null, 0, 0)
-        return Qt.point(p.x + (barWindow?.margins?.left ?? 0), p.y + (barWindow?.margins?.top ?? 0))
+        void BarLayout.tick
+        void barWindow?.visible
+        void x; void y; void width; void height
+        void parent?.x; void parent?.parent?.x; void parent?.parent?.width
+        return BarLayout.islandOrigin(root, barWindow)
     }
 
     property bool hoverPeek: false
@@ -46,7 +48,7 @@ Item {
     PanelWindow {
         id: win
         screen: root.barWindow?.screen ?? null
-        visible: root.visible && (root.barWindow?.visible ?? true)
+        visible: root.visible && (root.barWindow?.visible ?? false)
         color: "transparent"
         WlrLayershell.namespace: "quickshell-agent-usage"
         // Expanded islands sit above their neighbours' pills; drop back once the collapse settles.
