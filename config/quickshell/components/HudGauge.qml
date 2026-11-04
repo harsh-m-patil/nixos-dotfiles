@@ -13,6 +13,8 @@ Item {
     property string sub
     property real redline: 0.85
     property color accent: Theme.foam
+    property var numerals: ["0", "20", "40", "60", "80", "100"]   // spread evenly along the band
+    onNumeralsChanged: dial.requestPaint()
 
     property real anim: value
     Behavior on anim {
@@ -81,11 +83,12 @@ Item {
             ctx.font = "600 " + Math.round(R * 0.11) + "px '" + Theme.displayFont + "'"
             ctx.textAlign = "center"
             ctx.textBaseline = "middle"
-            for (let i = 0; i <= 5; i++) {
-                const t = i / 5
+            const n = gauge.numerals.length
+            for (let i = 0; i < n && n > 1; i++) {
+                const t = i / (n - 1)
                 const [x, y] = pt(at(t), rIn + band * 0.42)
                 ctx.fillStyle = t <= v ? Theme.alpha("#000000", 0.75) : Theme.alpha(Theme.foreground, 0.6)
-                ctx.fillText(String(i * 20), x, y)
+                ctx.fillText(String(gauge.numerals[i]), x, y)
             }
 
             // Edge of the sweep
@@ -108,6 +111,10 @@ Item {
         spacing: -3
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
+            width: gauge.r_ * 1.3
+            horizontalAlignment: Text.AlignHCenter
+            fontSizeMode: Text.HorizontalFit
+            minimumPixelSize: 11
             text: gauge.readout
             color: gauge.hot ? Theme.love : "#ffffff"
             font.family: Theme.displayFont
