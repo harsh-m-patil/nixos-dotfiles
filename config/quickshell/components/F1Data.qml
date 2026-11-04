@@ -8,8 +8,8 @@ import "."
 //   race    { round, season, name, short, circuitId, circuit, locality, country, start, sessions }
 //   session { label, start, end }
 //   driver  { pos, code, name, last, team, points, wins }      team is always teamKey()
-//   team    { pos, team, name, points, wins }
-//   result  { pos, code, name, team, time, points, grid, status, fastest }
+//   team    { pos, team, id, name, points, wins }        id is the Jolpica constructorId
+//   result  { pos, code, name, team, time, points, grid, status, dnf, fastest }
 // Sources: Jolpica (schedule, results, standings), OpenF1 (latest session, driver
 // colours and headshots, weather, flag) and Multiviewer (track outline).
 Singleton {
@@ -35,6 +35,8 @@ Singleton {
     property var flags: ({})             // round -> country flag url
     property var track: null
     property var history: null           // circuit history for the current weekend
+    property var teamSeason: null        // { id, races: [{ round, short, results }], quali: round -> [{ code, pos }], sprint: round -> [result] }
+    property var teamHistory: null       // { id, races, debut, wins, firstWin, lastWin, p2, p3, poles, years, seasons: year -> { pos, points, wins } }
     readonly property bool ready: races.length > 0
 
     // ── Weekend state ───────────────────────────────────────────
@@ -185,6 +187,8 @@ Singleton {
             pos: Number(r.position), code: r.Driver.code, name: r.Driver.givenName + " " + r.Driver.familyName,
             last: r.Driver.familyName, team: teamKey(r.Constructor.constructorId), grid: Number(r.grid),
             laps: r.laps, status: r.status, time: r.Time?.time ?? r.status, points: Number(r.points),
+            // Retired cars past 90% distance are still classified, so status decides.
+            dnf: !/^\d+$/.test(r.positionText ?? r.position) || !/^(Finished|Lapped|\+\d+ Laps?)$/.test(r.status),
             fastest: r.FastestLap?.rank === "1" ? r.FastestLap.Time.time : ""
         }
     }
@@ -213,7 +217,8 @@ Singleton {
         })
         net.fetch(jolpica + "current/constructorstandings.json?limit=15", ttl, j => {
             teamStandings = (list(j)?.ConstructorStandings ?? []).map(s => ({
-                pos: Number(s.position), team: teamKey(s.Constructor.constructorId), name: s.Constructor.name.replace(/ F1 Team$/, "").replace(/^RB$/, "Racing Bulls"),
+                pos: Number(s.position), team: teamKey(s.Constructor.constructorId), id: s.Constructor.constructorId,
+                name: s.Constructor.name.replace(/ F1 Team$/, "").replace(/^RB$/, "Racing Bulls"),
                 points: Number(s.points), wins: Number(s.wins)
             }))
         })
@@ -315,6 +320,61 @@ Singleton {
                 recent: rs.slice(-5).reverse(), mostWins: tally("name"), mostTeamWins: tally("team"),
                 fromPole, lowest
             }
+        })
+    }
+
+    // My team's season breakdown and all-time record, fetched when the My Team page asks.
+    function loadTeam() {
+        const id = myStanding?.id
+        if (!id) return
+        const mine = () => teamSeason?.id === id
+        const ttl = cadence
+        if (!mine()) teamSeason = { id, races: [], quali: {}, sprint: {} }
+        const setSeason = (key, value) => { if (mine()) teamSeason = Object.assign({}, teamSeason, { [key]: value }) }
+        const byRound = (races, key, map) => {
+            const out = {}
+            for (const r of races) out[r.round] = r[key].map(map)
+            return out
+        }
+        const races = j => j.MRData.RaceTable.Races ?? []
+        const base = jolpica + "current/constructors/" + id
+        net.fetch(base + "/results.json?limit=100", ttl, j => setSeason("races", races(j).map(r => ({
+            round: Number(r.round), short: r.raceName.replace(" Grand Prix", ""), results: r.Results.map(parseResult) }))))
+        net.fetch(base + "/qualifying.json?limit=100", ttl, j => setSeason("quali",
+            byRound(races(j), "QualifyingResults", q => ({ code: q.Driver.code, pos: Number(q.position) }))))
+        net.fetch(base + "/sprint.json?limit=100", ttl, j => setSeason("sprint", byRound(races(j), "SprintResults", parseResult)))
+
+        if (teamHistory?.id === id) return
+        teamHistory = { id, seasons: {} }
+        const ours = () => teamHistory?.id === id
+        const record = patch => { if (ours()) teamHistory = Object.assign({}, teamHistory, patch) }
+        const all = jolpica + "constructors/" + id
+        const total = j => Number(j.MRData.total)
+        const win = r => r ? { season: r.season, short: r.raceName.replace(" Grand Prix", ""), driver: r.Results[0].Driver.familyName } : null
+        net.fetch(all + "/races.json?limit=1", day, j => {
+            const r = races(j)[0]
+            record({ races: total(j), debut: r ? { season: r.season, short: r.raceName.replace(" Grand Prix", "") } : null })
+        })
+        net.fetch(all + "/results/1.json?limit=1", day, j => {
+            const wins = total(j)
+            record({ wins, firstWin: win(races(j)[0]), lastWin: wins === 1 ? win(races(j)[0]) : null })
+            if (wins > 1) net.fetch(all + "/results/1.json?limit=1&offset=" + (wins - 1), day, k => record({ lastWin: win(races(k)[0]) }))
+        })
+        net.fetch(all + "/results/2.json?limit=1", day, j => record({ p2: total(j) }))
+        net.fetch(all + "/results/3.json?limit=1", day, j => record({ p3: total(j) }))
+        net.fetch(all + "/qualifying/1.json?limit=1", day, j => record({ poles: total(j) }))
+        // The constructors' championship began in 1958; finished seasons never change.
+        // Whole-grid tables are shared by every team, so switching teams rarely costs a request.
+        net.fetch(all + "/seasons.json?limit=100", day, j => {
+            const years = (j.MRData.SeasonTable.Seasons ?? []).map(s => s.season).filter(y => y >= "1958")
+            record({ years })
+            for (const y of years)
+                net.fetch(jolpica + y + "/constructorstandings.json?limit=30", y === season ? ttl : 365 * day, k => {
+                    const s = (k.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings ?? [])
+                        .find(c => c.Constructor.constructorId === id)
+                    if (s) record({ seasons: Object.assign({}, teamHistory.seasons,
+                        { [y]: { pos: Number(s.position), points: Number(s.points), wins: Number(s.wins) } }) })
+                })
         })
     }
 
