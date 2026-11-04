@@ -48,6 +48,11 @@ Without a rebuild:
 
 Bar widgets: `workspaces`, `windowTitle`, `media`, `clock`, `f1`, `agentUsage`, `tray`, `status`.
 
+Several widgets use **islands**: a compact chip in the bar expands on hover or click into a CarPlay-style overlay
+(F1 weekend hub, agent usage, media, clock calendar, workspaces preview, Control Center). Include `"f1"` in
+`theme.packs` for the F1 chip and team-themed hub; `agentUsage` needs Cursor auth at `~/.config/cursor/auth.json` for
+quota limits (local usage still works without it). Details: [docs/guide.md](docs/guide.md#bar).
+
 ## Keybinds
 
 | Keys | Action |
@@ -56,9 +61,11 @@ Bar widgets: `workspaces`, `windowTitle`, `media`, `clock`, `f1`, `agentUsage`, 
 | `Super+Q` | close window |
 | `Super+h/j/k/l` | focus; `+Shift` move, `+Alt` resize |
 | `Super+1..0` | workspace; `+Shift` move window there |
+| `Super+Tab` | workspaces island |
 | `Super+Shift+T` | toggle dwindle / scrolling layout |
 | `Super+F` / `V` | fullscreen / float |
 | `Super+W` | toggle bar |
+| `Super+Shift+F` | F1 hub |
 | `Super+Shift+G` | theme picker |
 | `Super+Ctrl+Space` / `Super+Alt+Space` | wallpaper picker / next wallpaper |
 | `Super+Shift+X` | lock |
