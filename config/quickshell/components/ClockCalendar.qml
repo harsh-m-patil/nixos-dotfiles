@@ -81,6 +81,20 @@ ColumnLayout {
                         tone: "tertiary"
                     }
                 }
+                RowLayout {
+                    visible: F1Data.monthHasEvents(cal.year, cal.month)
+                    Layout.columnSpan: 7
+                    Layout.fillWidth: true
+                    Layout.bottomMargin: 2
+                    spacing: 6
+                    Item { Layout.fillWidth: true }
+                    Rectangle { implicitWidth: 14; implicitHeight: 3; radius: 1.5; color: Theme.gold }
+                    F1Text { text: "Race"; role: "caption"; tone: "tertiary" }
+                    Item { implicitWidth: 4 }
+                    Rectangle { implicitWidth: 5; implicitHeight: 4; radius: 2; color: F1Hub.ink3 }
+                    F1Text { text: "Session"; role: "caption"; tone: "tertiary" }
+                    Item { Layout.fillWidth: true }
+                }
                 Repeater {
                     model: cal.weeks * 7
                     ClockDay {
@@ -174,16 +188,7 @@ ColumnLayout {
 
             Item { Layout.fillHeight: true }
 
-            RowLayout {
-                Layout.leftMargin: 4
-                visible: F1Data.monthHasEvents(cal.year, cal.month)
-                spacing: 6
-                Rectangle { implicitWidth: 14; implicitHeight: 3; radius: 1.5; color: Theme.gold }
-                F1Text { text: "Race"; role: "caption"; tone: "tertiary" }
-                Item { implicitWidth: 6 }
-                Rectangle { implicitWidth: 4; implicitHeight: 3; radius: 1.5; color: F1Hub.ink3 }
-                F1Text { text: "Session"; role: "caption"; tone: "tertiary" }
-            }
+            Item { implicitHeight: 4; Layout.fillWidth: true }
         }
     }
 

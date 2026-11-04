@@ -217,8 +217,10 @@ ColumnLayout {
                 label: "CPU"
                 value: SystemData.cpu
                 accent: Theme.iris
-                sub: [SystemData.temp > 0 ? Fmt.deg(SystemData.temp) : "",
+                readonly property int cpuTemp: SystemData.temp
+                sub: [cpuTemp > 0 ? Fmt.deg(cpuTemp) : "",
                       SystemData.freq[1] > 0 ? (SystemData.freq[1] / 1000).toFixed(1) + " GHz" : ""].filter(x => x).join("  ")
+                subColor: cpuTemp >= 85 ? Theme.love : cpuTemp >= 70 ? Theme.gold : "#ffffff"
             }
 
             // Centre: network "speed", fuel and temperature meters
@@ -263,8 +265,8 @@ ColumnLayout {
                     icon: "󰔏"
                     label: "Temp"
                     value: Math.min(1, (panel.hasGpu ? Math.max(SystemData.temp, SystemData.gpuTemp) : SystemData.temp) / 100)
-                    accent: Theme.iris
-                    warnAbove: 0.8
+                    accent: Theme.gold
+                    warnAbove: 0.75
                 }
             }
 
@@ -478,7 +480,7 @@ ColumnLayout {
                 Rectangle {
                     required property var modelData
                     readonly property real frac: Math.min(1, modelData.c / 100)
-                    readonly property color tone: modelData.c >= 85 ? Theme.love : modelData.c >= 70 ? Theme.gold : Theme.iris
+                    readonly property color tone: modelData.c >= 85 ? Theme.love : modelData.c >= 70 ? Theme.gold : Theme.alpha(Theme.foreground, 0.5)
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
                     implicitHeight: 52

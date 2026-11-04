@@ -12,6 +12,7 @@ Item {
     property string sub
     property real reserve: 0.15
     property color accent: Theme.iris
+    property bool exceeded: false       // e.g. included spend past cap — empty dial, semantic warning colour
 
     property real anim: value
     Behavior on anim {
@@ -26,8 +27,8 @@ Item {
     onAnimChanged: dial.requestPaint()
     onAccentChanged: dial.requestPaint()
 
-    readonly property bool low: value <= reserve
-    readonly property color tone: low ? Theme.love : value <= 0.35 ? Theme.gold : accent
+    readonly property bool low: exceeded || value <= reserve
+    readonly property color tone: exceeded ? Theme.love : low ? Theme.love : value <= 0.35 ? Theme.gold : accent
     onToneChanged: dial.requestPaint()
     implicitWidth: 150
     implicitHeight: 104

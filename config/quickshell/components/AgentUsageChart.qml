@@ -18,7 +18,34 @@ Item {
 
     RowLayout {
         anchors.fill: parent
-        spacing: chart.days.length > 20 ? 3 : 5
+        spacing: 6
+
+        Item {
+            Layout.fillHeight: true
+            Layout.preferredWidth: 36
+            readonly property real padTop: 4
+            readonly property real padBottom: chart.labels ? 18 : 4
+            Repeater {
+                model: [1, 0.5, 0]
+                F1Text {
+                    required property real modelData
+                    anchors.right: parent.right
+                    y: parent.padTop + (parent.height - parent.padTop - parent.padBottom) * (1 - modelData) - height / 2
+                    width: 36
+                    horizontalAlignment: Text.AlignRight
+                    text: Fmt.usd(chart.peak * modelData)
+                    role: "caption"
+                    tone: "tertiary"
+                    numeric: true
+                    font.pixelSize: 8
+                }
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: chart.days.length > 20 ? 3 : 5
 
         Repeater {
             model: chart.days
@@ -56,6 +83,7 @@ Item {
                 HoverHandler { id: tapHover }
                 TapHandler { onTapped: chart.picked(col.index) }
             }
+        }
         }
     }
 }

@@ -40,8 +40,8 @@ Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: cell.large ? 7 : 5
-        width: cell.race ? 14 : 4
-        height: 3
+        width: cell.race ? 16 : 5
+        height: cell.race ? 3 : 4
         radius: 1.5
         color: cell.race ? Theme.gold : F1Hub.ink3
         opacity: cell.inMonth ? 1 : 0.45

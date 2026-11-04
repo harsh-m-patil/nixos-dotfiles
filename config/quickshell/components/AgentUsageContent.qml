@@ -304,9 +304,13 @@ ColumnLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 118
                     label: "Included spend"
-                    value: hub.d.spend ? Math.max(0, 1 - hub.d.spend.used / hub.d.spend.limit) : 0
-                    readout: hub.d.spend ? Fmt.usd(hub.d.spend.used) : ""
-                    sub: hub.d.spend ? "of " + Fmt.usd(hub.d.spend.limit) : ""
+                    readonly property bool over: hub.d.spend && hub.d.spend.used > hub.d.spend.limit
+                    exceeded: over
+                    value: hub.d.spend && !over ? Math.max(0, 1 - hub.d.spend.used / hub.d.spend.limit) : 0
+                    readout: !hub.d.spend ? ""
+                        : over ? Fmt.usd(hub.d.spend.used - hub.d.spend.limit) + " over"
+                        : Fmt.usd(hub.d.spend.used)
+                    sub: hub.d.spend ? "of " + Fmt.usd(hub.d.spend.limit) + " included" : ""
                 }
                 F1Text {
                     visible: hub.d.limits.length === 0 && hub.d.spend === null

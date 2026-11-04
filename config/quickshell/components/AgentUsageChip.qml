@@ -9,7 +9,7 @@ import "."
 // The agent usage island. The bar holds a placeholder; the shape lives in an overlay
 // surface and morphs in place:
 //   compact  limit ring + today's spend
-//   peek     hover, or a few seconds after the tightest limit crosses 35% / 15% left
+//   peek     hover only
 //   full     models, days and limits (click, or `qs ipc call agentUsage toggle`)
 Item {
     id: root
@@ -31,11 +31,10 @@ Item {
 
     onHoverPeekChanged: hoverPeek ? Motion.claim(root) : Motion.unclaim(root)
     readonly property bool full: AgentUsageData.open && AgentUsageData.screen === screenName
-    readonly property string state_: full ? "full" : hoverPeek || alert.running ? "peek" : "compact"
+    readonly property string state_: full ? "full" : hoverPeek ? "peek" : "compact"
     onState_Changed: if (state_ === "compact") settle.restart()
     Timer { id: settle; interval: 450 }
 
-    Timer { id: alert; interval: 6000 }
     Timer { id: intent; interval: Motion.instantFor(root) ? 0 : 180; onTriggered: root.hoverPeek = true }
     Timer { id: leave; interval: 280; onTriggered: { root.hoverPeek = false; Motion.release() } }
 
@@ -43,7 +42,12 @@ Item {
         const t = AgentUsageData.tightest
         return !t ? 0 : t.left <= 15 ? 2 : t.left <= 35 ? 1 : 0
     }
-    onBandChanged: if (band > 0 && AgentUsageData.ready) { alert.restart(); if (!Motion.reduced) alertPulse.restart() }
+    property int lastBand: 0
+    onBandChanged: {
+        if (band > lastBand && band > 0 && AgentUsageData.ready && !Motion.reduced)
+            alertPulse.restart()
+        lastBand = band
+    }
 
     PanelWindow {
         id: win
@@ -77,7 +81,7 @@ Item {
         readonly property int peekPadV: 12
         readonly property size peekSize: Qt.size(
             Math.min(width - 16, Math.max(268, peek.implicitWidth + peekPadH * 2)),
-            peek.implicitHeight + peekPadV * 2 + 6)
+            peek.contentHeight + peekPadV * 2 + 6)
         readonly property size fullSize: Qt.size(Math.min(width - 16, 720), Math.min(height - 48, [480, 450, 360][AgentUsageData.page]))
 
         IslandBackdrop {
@@ -142,7 +146,7 @@ Item {
                     else { intent.stop(); leave.restart() }
                 }
             }
-            // The island opened by itself; a pulse of the limit's colour says why.
+            // Limit band worsened; a pulse of the limit colour on the compact pill.
             Rectangle {
                 id: alertRing
                 z: 3
@@ -203,7 +207,7 @@ Item {
                 z: 2
                 x: (shape.width - width) / 2
                 y: win.peekPadV
-                width: implicitWidth
+                width: Math.max(implicitWidth, 340)
                 transformOrigin: Item.Top
                 opacity: root.state_ === "peek" ? 1 : 0
                 scale: root.state_ === "peek" ? 1 : Motion.contentHiddenScale

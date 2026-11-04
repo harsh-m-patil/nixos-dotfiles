@@ -16,8 +16,25 @@ ColumnLayout {
         return t
     }
 
+    // Stable width for layout (matches Status/F1 peeks) so peekSize height is not measured in a clipped pill.
+    implicitWidth: Math.max(340, tanks.length > 0 ? Math.max(340, tanks.length * 92) : 340)
+    // Island overlay reads this for peek height; ColumnLayout's own implicitHeight stays layout-driven.
+    readonly property int contentHeight: {
+        void tanks.length
+        void d.ready
+        void d.models.length
+        let h = odoRow.implicitHeight
+        if (statusLine.visible) h += spacing + statusLine.implicitHeight
+        if (gaugeStrip.visible) h += spacing + gaugeStrip.implicitHeight
+        if (leadRow.visible) h += spacing + leadRow.implicitHeight
+        h += spacing + openBtn.implicitHeight
+        return h
+    }
+
     RowLayout {
+        id: odoRow
         Layout.fillWidth: true
+        Layout.fillHeight: false
         spacing: 14
         HudOdometer {
             label: "Trip · today"
@@ -35,6 +52,7 @@ ColumnLayout {
     }
 
     Text {
+        id: statusLine
         visible: peek.d.error !== "" || !peek.d.ready
         Layout.fillWidth: true
         text: peek.d.error !== "" ? peek.d.error : "Scanning local agent history…"
@@ -45,7 +63,9 @@ ColumnLayout {
     }
 
     Rectangle {
+        id: gaugeStrip
         Layout.fillWidth: true
+        Layout.fillHeight: false
         visible: peek.tanks.length > 0
         implicitHeight: 112
         Layout.preferredWidth: Math.max(340, peek.tanks.length * 92)
@@ -71,7 +91,9 @@ ColumnLayout {
     }
 
     RowLayout {
+        id: leadRow
         Layout.fillWidth: true
+        Layout.fillHeight: false
         visible: peek.d.models.length > 0
         spacing: 6
         Text {
@@ -98,7 +120,9 @@ ColumnLayout {
     }
 
     ClockButton {
+        id: openBtn
         Layout.alignment: Qt.AlignHCenter
+        Layout.fillHeight: false
         text: "Open Agent usage"
         onClicked: peek.openRequested()
     }

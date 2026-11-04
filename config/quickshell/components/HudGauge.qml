@@ -11,6 +11,7 @@ Item {
     property string readout: Math.round(value * 100) + ""
     property string unit: "%"
     property string sub
+    property color subColor: gauge.hot ? Theme.love : "#ffffff"
     property real redline: 0.85
     property color accent: Theme.foam
     property var numerals: ["0", "20", "40", "60", "80", "100"]   // spread evenly along the band
@@ -137,7 +138,7 @@ Item {
         y: gauge.cy_ + gauge.r_ * 0.62
         text: gauge.sub
         visible: text !== ""
-        color: "#ffffff"
+        color: gauge.subColor
         font.family: Theme.displayFont
         font.pixelSize: 10
         font.weight: Font.DemiBold
