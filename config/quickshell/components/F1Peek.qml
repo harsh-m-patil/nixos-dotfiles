@@ -31,6 +31,16 @@ ColumnLayout {
     }
     readonly property int liveMinutes: live ? Math.round((live.end - live.start) / F1Data.minute) : 0
 
+    readonly property int contentHeight: {
+        void F1Data.sessions.length
+        void podium.length
+        let h = gaugeRow.implicitHeight
+        if (weekendStrip.visible) h += spacing + weekendStrip.implicitHeight
+        if (podiumStrip.visible) h += spacing + podiumStrip.implicitHeight
+        h += spacing + openBtn.implicitHeight
+        return h
+    }
+
     function short(s) { return F1Data.sessionShort[s.label] ?? s.label }
 
     component Caption: Text {
@@ -41,7 +51,9 @@ ColumnLayout {
     }
 
     RowLayout {
+        id: gaugeRow
         Layout.fillWidth: true
+        Layout.fillHeight: false
         spacing: 0
 
         HudGauge {
@@ -142,7 +154,9 @@ ColumnLayout {
 
     // The weekend: one lamp per session — lit once run, filling while live, tinted when next.
     Rectangle {
+        id: weekendStrip
         Layout.fillWidth: true
+        Layout.fillHeight: false
         visible: F1Data.sessions.length > 0
         implicitHeight: 58
         radius: F1Hub.tileRadius
@@ -203,7 +217,9 @@ ColumnLayout {
 
     // Results: the top three as a row of driver readouts, team colour as the lamp.
     Rectangle {
+        id: podiumStrip
         Layout.fillWidth: true
+        Layout.fillHeight: false
         visible: peek.podium.length > 0
         implicitHeight: 62
         radius: F1Hub.tileRadius
@@ -252,7 +268,9 @@ ColumnLayout {
     }
 
     ClockButton {
+        id: openBtn
         Layout.alignment: Qt.AlignHCenter
+        Layout.fillHeight: false
         text: "Open F1 Hub"
         hint: "Super⇧F"
         onClicked: peek.openRequested()

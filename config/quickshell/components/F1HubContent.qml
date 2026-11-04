@@ -10,7 +10,7 @@ ColumnLayout {
     spacing: 14
     property bool showHints: false
 
-    readonly property var globalHints: [["1–5", "Pages"], ["r", "Refresh"], ["esc", "Close"]]
+    readonly property var globalHints: [["1–6", "Pages"], ["r", "Refresh"], ["esc", "Close"]]
 
     function handleKey(e) {
         const k = e.key, n = F1Hub.pages.length
@@ -76,7 +76,7 @@ ColumnLayout {
         // Pages load on first visit and stay alive; only the current one is visible.
         Repeater {
             id: pages
-            model: ["F1OverviewPage.qml", "F1ResultsPage.qml", "F1StandingsPage.qml", "F1CircuitPage.qml", "F1SeasonPage.qml"]
+            model: ["F1OverviewPage.qml", "F1MyTeamPage.qml", "F1ResultsPage.qml", "F1StandingsPage.qml", "F1CircuitPage.qml", "F1SeasonPage.qml"]
             Loader {
                 id: loader
                 required property string modelData

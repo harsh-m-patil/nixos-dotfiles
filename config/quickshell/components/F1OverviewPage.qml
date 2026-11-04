@@ -6,13 +6,13 @@ import "."
 // The dashboard: what's next, where the team stands, and the conditions at the track.
 F1Page {
     id: page
-    readonly property var s: F1Data.session
-    readonly property var w: s?.weather ?? null
+    readonly property var topDriver: F1Data.driverStandings[0] ?? null
     readonly property var me: F1Data.myStanding
     readonly property var leader: F1Data.teamStandings[0] ?? null
     readonly property var ahead: me && me.pos > 1 ? F1Data.teamStandings[me.pos - 2] : null
-    readonly property var topDriver: F1Data.driverStandings[0] ?? null
+    readonly property var s: F1Data.session
     readonly property var h: F1Data.history
+    readonly property var w: s?.weather ?? null
     Component.onCompleted: F1Data.loadHistory()
 
     readonly property string mode: F1Data.mode
@@ -105,7 +105,7 @@ F1Page {
         F1Tile {
             col: 1; row: 0
             interactive: true
-            onClicked: F1Hub.page = 1
+            onClicked: F1Hub.page = 2
             label: F1Data.lastRace ? F1Data.lastRace.short + " GP" : "Last race"
             detail: F1Data.lastRace ? "R" + F1Data.lastRace.round : ""
             Repeater {
@@ -134,7 +134,7 @@ F1Page {
         F1Tile {
             col: 1; row: 1
             interactive: true
-            onClicked: F1Hub.page = 2
+            onClicked: F1Hub.page = 3
             label: "Championship"
             detail: F1Data.driverStandings.length ? (F1Data.races.length - Object.keys(F1Data.winners).length) + " to go" : ""
             Repeater {
@@ -191,7 +191,7 @@ F1Page {
         F1Tile {
             col: 2; row: 1
             interactive: true
-            onClicked: F1Hub.page = 2
+            onClicked: F1Hub.page = 1
             F1Arc {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -248,6 +248,8 @@ F1Page {
 
         F1Tile {
             col: 0; row: 2; colSpan: 2
+            interactive: true
+            onClicked: F1Hub.page = 1
             label: F1Data.teamName(F1Data.myTeam)
             detail: "Drivers' championship"
             Repeater {

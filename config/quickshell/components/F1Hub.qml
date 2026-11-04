@@ -12,6 +12,7 @@ Singleton {
     property int page: 0
     readonly property var pages: [
         { name: "Overview", icon: "󰋜" },
+        { name: "My Team", icon: "󰓎" },
         { name: "Results", icon: "󰔸" },
         { name: "Standings", icon: "󰓒" },
         { name: "Circuit", icon: "󰈼" },

@@ -17,7 +17,7 @@ Both scripts copy the config to `/tmp`, patch the copy so the UI is forced open,
 ~/nixos-dotfiles/.agents/skills/quickshell-screenshot/hub.sh <page> /tmp/h<page>.png ["x,y WxH"]
 ```
 
-Pages: 0 Overview, 1 Results, 2 Standings, 3 Circuit, 4 Season. `hub.sh` sets `F1Hub.open`, `screen` (focused monitor) and `page` in the copy. The default crop `650,0 890x700` frames the hub on the 1920×1080 eDP-1; the island sits under the F1 chip, not centred on screen.
+Pages: 0 Overview, 1 My Team, 2 Results, 3 Standings, 4 Circuit, 5 Season. `hub.sh` sets `F1Hub.open`, `screen` (focused monitor) and `page` in the copy. The default crop `650,0 890x700` frames the hub on the 1920×1080 eDP-1; the island sits under the F1 chip, not centred on screen.
 
 ## Bar popups
 

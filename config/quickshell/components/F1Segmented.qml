@@ -37,7 +37,9 @@ Rectangle {
             Item {
                 required property string modelData
                 required property int index
-                width: label.implicitWidth + (key.visible ? key.implicitWidth + 6 : 0) + 28
+                readonly property bool on: index === seg.current
+                readonly property string keyLabel: seg.keys[index] ?? ""
+                width: label.implicitWidth + (keyCap.visible ? keyCap.implicitWidth + 6 : 0) + 28
                 height: seg.height - 6
                 Row {
                     anchors.centerIn: parent
@@ -46,20 +48,30 @@ Rectangle {
                         id: label
                         text: parent.parent.modelData
                         role: "footnote"
-                        tone: parent.parent.index === seg.current ? "primary" : "secondary"
-                        color: parent.parent.index === seg.current ? Theme.background : F1Hub.ink2
-                        font.weight: parent.parent.index === seg.current ? Font.DemiBold : Font.Medium
+                        tone: parent.parent.on ? "primary" : "secondary"
+                        color: parent.parent.on ? Theme.background : F1Hub.ink2
+                        font.weight: parent.parent.on ? Font.DemiBold : Font.Medium
                     }
-                    F1Text {
-                        id: key
-                        visible: (seg.keys[parent.parent.index] ?? "") !== ""
-                        text: seg.keys[parent.parent.index] ?? ""
-                        role: "caption"
-                        tone: "tertiary"
-                        numeric: true
+                    Rectangle {
+                        id: keyCap
+                        visible: parent.parent.keyLabel !== ""
+                        radius: 4
+                        color: Theme.alpha(Theme.foreground, parent.parent.on ? 0.18 : 0.1)
+                        implicitWidth: key.implicitWidth + 8
+                        implicitHeight: key.implicitHeight + 4
+                        F1Text {
+                            id: key
+                            anchors.centerIn: parent
+                            text: parent.parent.parent.keyLabel
+                            role: "caption"
+                            color: parent.parent.parent.on ? Theme.alpha(Theme.background, 0.75) : F1Hub.ink3
+                            numeric: true
+                            font.pixelSize: 9
+                            font.weight: Font.DemiBold
+                        }
                     }
                 }
-                TapHandler { onTapped: seg.picked(parent.index) }
+                TapHandler { onTapped: seg.picked(index) }
             }
         }
     }

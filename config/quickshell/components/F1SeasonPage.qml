@@ -63,6 +63,7 @@ F1Page {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
                     implicitHeight: 60
+                    Layout.minimumHeight: 60
                     radius: 14
                     color: isCurrent ? F1Hub.fillStrong : F1Hub.fill
                     border.width: selected ? 1.5 : 0
@@ -107,6 +108,9 @@ F1Page {
                             role: "headline"
                             tone: cell.done && !cell.selected ? "secondary" : "primary"
                             Layout.fillWidth: true
+                            wrap: true
+                            font.pixelSize: 12
+                            lineHeight: 1.05
                         }
                     }
                     TapHandler { id: cellTap; onTapped: page.cursor = cell.index }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Screenshot the F1 hub (the expanded F1 island) on a given page, using a throwaway config copy.
-# Usage: hub.sh <page 0-4> <out.png> [grim geometry]
-#   pages: 0 Overview, 1 Results, 2 Standings, 3 Circuit, 4 Season
+# Usage: hub.sh <page 0-5> <out.png> [grim geometry]
+#   pages: 0 Overview, 1 My Team, 2 Results, 3 Standings, 4 Circuit, 5 Season
 set -euo pipefail
 
 src="$HOME/nixos-dotfiles/config/quickshell"

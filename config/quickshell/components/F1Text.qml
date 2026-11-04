@@ -7,6 +7,7 @@ Text {
     property string role: "body"        // display · numeral · largeTitle · title · title2 · headline · body · callout · footnote · caption
     property string tone: "primary"     // primary · secondary · tertiary
     property bool numeric: false
+    property bool wrap: false
 
     // Gauge read-outs: big, heavy, tightly tracked, like a speedometer figure.
     readonly property var scale: ({
@@ -22,5 +23,7 @@ Text {
     font.weight: scale[role][1]
     font.letterSpacing: scale[role][2]
     font.features: numeric ? { "tnum": 1 } : {}
-    elide: Text.ElideRight
+    wrapMode: wrap ? Text.WordWrap : Text.NoWrap
+    maximumLineCount: wrap ? 2 : 1
+    elide: wrap ? Text.ElideNone : Text.ElideRight
 }

@@ -93,6 +93,8 @@ F1Arc 1.0 F1Arc.qml
 F1Ticks 1.0 F1Ticks.qml
 F1Pill 1.0 F1Pill.qml
 F1Compass 1.0 F1Compass.qml
+F1DriverAvatar 1.0 F1DriverAvatar.qml
+F1MyTeamPage 1.0 F1MyTeamPage.qml
 TrackMap 1.0 TrackMap.qml
 singleton ThemeApplier 1.0 ThemeApplier.qml
 SystemSampler 1.0 SystemSampler.qml

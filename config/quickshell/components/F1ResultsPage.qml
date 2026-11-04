@@ -50,15 +50,32 @@ F1Page {
                 current: page.source
                 onPicked: i => page.choice = i
             }
-            RowLayout {
+            ColumnLayout {
                 visible: page.same
                 Layout.fillWidth: true
-                Layout.preferredHeight: 34
                 Layout.leftMargin: 8
                 Layout.rightMargin: 8
                 Layout.bottomMargin: 4
-                F1Text { text: F1Data.lastRace ? F1Data.lastRace.short + " Grand Prix" : ""; role: "headline"; Layout.fillWidth: true }
-                F1Text { text: F1Data.lastRace ? "Round " + F1Data.lastRace.round : ""; role: "caption"; tone: "tertiary"; numeric: true }
+                spacing: 2
+                F1Text {
+                    text: "Previous round"
+                    role: "caption"
+                    tone: "secondary"
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    F1Text {
+                        text: F1Data.lastRace ? F1Data.lastRace.short + " Grand Prix" : ""
+                        role: "headline"
+                        Layout.fillWidth: true
+                    }
+                    F1Text {
+                        text: F1Data.lastRace ? "Round " + F1Data.lastRace.round : ""
+                        role: "caption"
+                        tone: "tertiary"
+                        numeric: true
+                    }
+                }
             }
             Repeater {
                 model: page.rows
@@ -85,7 +102,9 @@ F1Page {
         F1Tile {
             col: 2; row: 0; colSpan: 2; rowSpan: 2
             pad: 10
-            label: page.source === 0 ? (F1Data.session?.name ?? "") : F1Data.lastRace ? "Round " + F1Data.lastRace.round + " · " + F1Data.lastRace.season : ""
+            label: page.source === 0 ? (F1Data.session?.name ?? "")
+                : F1Data.lastRace ? (page.same ? "Last race · Round " : "Round ") + F1Data.lastRace.round
+                    + (page.same ? "" : " · " + F1Data.lastRace.season) : ""
             detail: page.source === 0 && F1Data.session ? Qt.formatDateTime(F1Data.session.ended, "ddd d MMM") : ""
             F1Podium { entries: page.rows.slice(0, 3); height1: 300; Layout.fillHeight: true }
         }

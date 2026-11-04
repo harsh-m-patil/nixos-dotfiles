@@ -79,7 +79,7 @@ Item {
         readonly property int peekPadV: 12
         readonly property size peekSize: Qt.size(
             Math.min(width - 16, Math.max(268, peek.implicitWidth + peekPadH * 2)),
-            peek.implicitHeight + peekPadV * 2 + 6)
+            peek.contentHeight + peekPadV * 2 + 6)
         readonly property size fullSize: Qt.size(Math.min(width - 16, 860), Math.min(height - 48, 680))
 
         IslandBackdrop {
